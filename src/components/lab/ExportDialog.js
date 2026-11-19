@@ -1,0 +1,134 @@
+'use client';
+
+import { useState } from 'react';
+import { generateCssTokens } from '@/design-versions/cssExport';
+import { useDialogLightDismiss } from './ComponentsSection';
+
+export default function ExportDialog({
+  dialogRef,
+  activeVersion,
+  onImportVersionJson,
+}) {
+  const [tab, setTab] = useState('css');
+  const [copied, setCopied] = useState(false);
+  const [importDraft, setImportDraft] = useState('');
+  const [importError, setImportError] = useState('');
+
+  useDialogLightDismiss(dialogRef, () => {
+    setImportError('');
+  });
+
+  const cssOutput = generateCssTokens(activeVersion);
+  const jsonOutput = JSON.stringify(activeVersion, null, 2);
+  const displayCode = tab === 'css' ? cssOutput : jsonOutput;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(displayCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1800);
+    } catch {}
+  };
+
+  const handleImport = () => {
+    setImportError('');
+    try {
+      const parsed = JSON.parse(importDraft);
+      onImportVersionJson(parsed);
+      setImportDraft('');
+      dialogRef.current?.close();
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'JSONの解析に失敗しました');
+    }
+  };
+
+  return (
+    <dialog
+      ref={dialogRef}
+      className="lab-dialog is-export"
+      closedby="any"
+      aria-labelledby="export-dialog-title"
+    >
+      <div className="dialog-header">
+        <div>
+          <span className="lab-kicker">EXPORT / IMPORT</span>
+          <h3 id="export-dialog-title">{activeVersion.name} のトークン書き出し</h3>
+        </div>
+        <form method="dialog">
+          <button type="submit" value="close" className="ctrl-btn" aria-label="閉じる">
+            ✕
+          </button>
+        </form>
+      </div>
+
+      <div className="dialog-tabs">
+        <button
+          type="button"
+          className={`comp-tab-btn ${tab === 'css' ? 'is-active' : ''}`}
+          onClick={() => setTab('css')}
+        >
+          CSS変数 (globals.css用)
+        </button>
+        <button
+          type="button"
+          className={`comp-tab-btn ${tab === 'json' ? 'is-active' : ''}`}
+          onClick={() => setTab('json')}
+        >
+          バージョンJSON
+        </button>
+        <button
+          type="button"
+          className={`comp-tab-btn ${tab === 'import' ? 'is-active' : ''}`}
+          onClick={() => setTab('import')}
+        >
+          JSONインポート
+        </button>
+      </div>
+
+      <div className="dialog-body">
+        {tab === 'import' ? (
+          <div className="import-box">
+            <p className="import-hint">
+              書き出したバージョンJSONを貼り付けると、新しいカスタムバージョンとして読み込まれます。
+            </p>
+            <textarea
+              className="export-textarea"
+              rows={12}
+              value={importDraft}
+              onChange={(e) => setImportDraft(e.target.value)}
+              placeholder='{"name": "...", "themes": ...}'
+              spellCheck={false}
+            />
+            {importError && <p className="ui-alert is-danger">{importError}</p>}
+          </div>
+        ) : (
+          <textarea
+            className="export-textarea"
+            rows={16}
+            value={displayCode}
+            readOnly
+            spellCheck={false}
+            aria-label="書き出しコード"
+          />
+        )}
+      </div>
+
+      <div className="dialog-footer">
+        {tab === 'import' ? (
+          <button type="button" className="ui-btn is-primary" onClick={handleImport}>
+            新案として読み込む
+          </button>
+        ) : (
+          <button type="button" className="ui-btn is-primary" onClick={handleCopy}>
+            {copied ? 'コピーしました！' : 'クリップボードにコピー'}
+          </button>
+        )}
+        <form method="dialog">
+          <button type="submit" value="cancel" className="ui-btn is-ghost">
+            閉じる
+          </button>
+        </form>
+      </div>
+    </dialog>
+  );
+}

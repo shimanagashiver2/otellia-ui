@@ -1,0 +1,161 @@
+:root {
+  color-scheme: light dark;
+  --font-ui: var(--font-sans), 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+  --font-num: var(--font-mono), ui-monospace, 'SFMono-Regular', monospace;
+
+  /* JS未実行時フォールバック用のデフォルトトークン */
+  --lab-bg: light-dark(#e8edf5, #161a22);
+  --lab-bg-image: none;
+  --lab-bg-size: auto;
+  --lab-surface-1: light-dark(#ffffff, #1e2430);
+  --lab-surface-2: light-dark(#f3f6fb, #252c3b);
+  --lab-surface-subtle: light-dark(#eaf0f8, #1a202b);
+  --lab-header-bg: light-dark(rgba(255, 255, 255, 0.92), rgba(22, 26, 34, 0.92));
+  --lab-border: light-dark(#cfd8e6, #2f3849);
+  --lab-border-strong: light-dark(#94a3b8, #475569);
+  --lab-text: light-dark(#0f172a, #e2e8f0);
+  --lab-text-muted: light-dark(#475569, #94a3b8);
+  --lab-text-faint: light-dark(#64748b, #64748b);
+  --lab-accent: light-dark(#0284c7, #22d3ee);
+  --lab-accent-text: light-dark(#ffffff, #082f49);
+  --lab-accent-soft: light-dark(rgba(2, 132, 199, 0.1), rgba(34, 211, 238, 0.12));
+  --lab-shadow: light-dark(0 2px 8px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(0, 0, 0, 0.28));
+  --lab-glow: none;
+  --lab-danger: light-dark(#dc2626, #f87171);
+  --lab-warning: light-dark(#d97706, #fbbf24);
+  --lab-success: light-dark(#059669, #34d399);
+
+  --lab-card-radius: 12px;
+  --lab-inner-radius: 8px;
+  --lab-badge-radius: 6px;
+  --lab-border-width: 1px;
+  --lab-blur: 0px;
+
+  &:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+  }
+
+  &:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  font-family: var(--font-ui);
+  background-color: var(--lab-bg);
+  color: var(--lab-text);
+  accent-color: var(--lab-accent);
+}
+
+/* Lab全体の表面ルート */
+.lab-root {
+  min-height: 100vh;
+  background-color: var(--lab-bg);
+  background-image: var(--lab-bg-image);
+  background-size: var(--lab-bg-size);
+  color: var(--lab-text);
+  accent-color: var(--lab-accent);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ライト/ダーク同時比較用の独立テーマスコープ（背景・文字色・accent-colorを必ず再定義） */
+.theme-scope-light {
+  color-scheme: only light;
+  background-color: var(--lab-bg);
+  background-image: var(--lab-bg-image);
+  background-size: var(--lab-bg-size);
+  color: var(--lab-text);
+  accent-color: var(--lab-accent);
+}
+
+.theme-scope-dark {
+  color-scheme: only dark;
+  background-color: var(--lab-bg);
+  background-image: var(--lab-bg-image);
+  background-size: var(--lab-bg-size);
+  color: var(--lab-text);
+  accent-color: var(--lab-accent);
+}
+
+/* コンテナクエリ対応のプレビューステージ */
+.preview-stage {
+  container-type: inline-size;
+  container-name: preview;
+  width: 100%;
+  margin: 0 auto;
+  transition: max-width 0.2s ease;
+}
+
+.preview-stage.is-mobile {
+  max-width: 375px;
+}
+
+.preview-stage.is-tablet {
+  max-width: 768px;
+}
+
+.preview-stage.is-full {
+  max-width: 100%;
+}
+
+/* 等幅数字 */
+.num-tabular {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Native <dialog> (modern-web-guidance: dialog 準拠) */
+dialog.lab-dialog {
+  border: var(--lab-border-width) solid var(--lab-border-strong);
+  border-radius: var(--lab-card-radius);
+  background-color: var(--lab-surface-1);
+  color: var(--lab-text);
+  padding: 0;
+  width: min(92vw, 760px);
+  max-height: min(86vh, 760px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.36);
+  margin: auto;
+}
+
+dialog.lab-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+dialog.lab-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog.lab-dialog::backdrop {
+  background: rgba(9, 13, 22, 0.62);
+  backdrop-filter: blur(3px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* SVGアイコン */
+.ui-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.theme-scope-dark .ui-icon,
+html.dark-mode :not(.theme-scope-light) .ui-icon {
+  filter: invert(1) hue-rotate(180deg) brightness(1.15);
+}
+
+.theme-scope-light .ui-icon {
+  filter: none;
+}

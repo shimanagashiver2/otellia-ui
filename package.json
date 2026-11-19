@@ -1,0 +1,22 @@
+{
+  "name": "otellia-ui",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:pages": "NEXT_PUBLIC_BASE_PATH=/otellia-ui next build",
+    "deploy": "NEXT_PUBLIC_BASE_PATH=/otellia-ui next build && node scripts/deploy-pages.mjs",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "next": "16.4.6",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "eslint": "10.15.0",
+    "eslint-config-next": "16.4.6"
+  }
+}

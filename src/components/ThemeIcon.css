@@ -1,0 +1,37 @@
+/* アイコンを表示する「窓」の役割 */
+.theme-icon-container {
+  width: 40px;
+  height: 40px;
+  overflow: hidden; /* 枠からはみ出した部分を隠す */
+  position: relative;
+  /* アイコンの色：変数はglobals.cssのものを使用 */
+  color: var(--header-text); 
+}
+
+/* 2つのアイコンを縦に並べた「帯」 */
+.theme-icon-slider {
+  display: flex;
+  flex-direction: column; /* 縦並びにする */
+  width: 100%;
+  height: 80px; /* 40px * 2個分 */
+  
+  /* アニメーションの設定 */
+  transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* バネのような少し凝った動き */
+  /* 普通の動きが良ければ↓こっちを使う */
+  /* transition: transform 0.4s ease-in-out; */
+  
+  transform: translateY(0); /* 初期位置：ライトモード表示 */
+}
+
+/* ダークモード時は帯を上にずらす */
+.theme-icon-slider.slide-up {
+  transform: translateY(-40px); /* 1個分上にスライド */
+}
+
+/* 個別のSVGの設定 */
+.theme-svg {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0; /* 潰れないようにする */
+  fill: currentColor; /* 親のcolorを引き継ぐ */
+}
