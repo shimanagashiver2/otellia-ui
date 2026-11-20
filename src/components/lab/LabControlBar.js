@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { BG_PATTERN_OPTIONS } from '@/design-versions/defaults';
 import { MONO_FONT_OPTIONS, UI_FONT_OPTIONS } from '@/design-versions/fonts';
 
 export const LAB_SECTIONS = [
@@ -164,23 +165,21 @@ export default function LabControlBar({
         </div>
 
         <div className="lab-control-group">
-          <span className="ctrl-label">BG</span>
-          <div className="ctrl-segmented" role="group" aria-label="背景パターン">
-            {[
-              { id: 'none', label: '無地' },
-              { id: 'grid', label: '方眼' },
-              { id: 'dots', label: 'ドット' },
-            ].map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={activeVersion.shape?.bgPattern === item.id ? 'is-active' : ''}
-                onClick={() => onChangeBgPattern(item.id)}
-              >
+          <label htmlFor="ctrl-bg-pattern" className="ctrl-label">
+            BG
+          </label>
+          <select
+            id="ctrl-bg-pattern"
+            className="ctrl-select"
+            value={activeVersion.shape?.bgPattern || 'none'}
+            onChange={(e) => onChangeBgPattern(e.target.value)}
+          >
+            {BG_PATTERN_OPTIONS.map((item) => (
+              <option key={item.id} value={item.id}>
                 {item.label}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </div>
 
         <div className="lab-control-group is-fonts">

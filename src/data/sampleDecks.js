@@ -1,15 +1,15 @@
 export const GROUP_ITEMS = [
   { key: '0', label: 'お試しデッキ', short: 'お試し', defaultRule: 'コスト200固定' },
   { key: '1', label: '基本デッキ', short: '基本', defaultRule: 'コスト200固定' },
-  { key: '2', label: 'カップ戦専用', short: 'カップ戦', defaultRule: '月別上限＋印/個別上下' },
+  { key: '2', label: 'カップ戦専用', short: 'カップ戦', defaultRule: '標準160〜170＋印/個別上下' },
   { key: '3', label: 'シーズン専用', short: 'シーズン', defaultRule: 'クラス依存（ダイヤ200等）' },
   { key: '4', label: 'UNKNOWN', short: 'UNKNOWN', defaultRule: '予備枠' },
-  { key: '5', label: '白の塔専用', short: '白の塔', defaultRule: '階層別上限＋印上下' },
-  { key: '6', label: '闘技場専用A', short: '闘技場A', defaultRule: '可変（最大320）' },
-  { key: '7', label: '闘技場専用B', short: '闘技場B', defaultRule: '可変（最大320）' },
-  { key: '8', label: '闘技場専用C', short: '闘技場C', defaultRule: '可変（最大320）' },
-  { key: '9', label: 'ロイヤル専用', short: 'ロイヤル', defaultRule: 'コスト180固定' },
-  { key: 'a', label: 'グローリー専用', short: 'グローリー', defaultRule: 'コスト180固定' },
+  { key: '5', label: '白の塔専用', short: '白の塔', defaultRule: '階層別＋最大-20級例外あり' },
+  { key: '6', label: '闘技場専用A', short: '闘技場A', defaultRule: '標準180〜200（最大320）' },
+  { key: '7', label: '闘技場専用B', short: '闘技場B', defaultRule: '標準180〜200（最大320）' },
+  { key: '8', label: '闘技場専用C', short: '闘技場C', defaultRule: '標準180〜200（最大320）' },
+  { key: '9', label: 'ロイヤル専用', short: 'ロイヤル', defaultRule: 'コスト180＋専用駒制限' },
+  { key: 'a', label: 'グローリー専用', short: 'グローリー', defaultRule: 'コスト180＋専用駒制限' },
 ];
 
 export const GROUP_BY_KEY = Object.fromEntries(GROUP_ITEMS.map((item) => [item.key, item]));
@@ -35,12 +35,12 @@ export const GROUP_RULE_SPECS = [
   },
   {
     key: '2',
-    defaultLimit: 180,
-    maxLimit: 220,
-    limitType: '月別変動 (180等)',
-    costVariation: '印×レアリティ＋一部例外キャラ個別指定',
+    defaultLimit: 160,
+    maxLimit: 200,
+    limitType: '月別変動 (標準160〜170前後)',
+    costVariation: '印×レアリティ＋例外キャラ個別指定',
     deckRestriction: 'S枚数制限（2〜3等）・B枚数制限（1等）あり',
-    note: '毎月コストルールや印・キャラ別コストが変動。',
+    note: '基本コスト上限は標準160〜170前後。毎月ルールや個別コストが変動。',
   },
   {
     key: '9',
@@ -48,8 +48,8 @@ export const GROUP_RULE_SPECS = [
     maxLimit: 180,
     limitType: '固定 (180)',
     costVariation: 'なし',
-    deckRestriction: 'ロイヤル専用ルール',
-    note: 'コスト上限180固定。',
+    deckRestriction: 'ロイヤル独自の駒制限あり（グローリーとは別）',
+    note: 'コスト上限180固定。グローリーとは別の禁止・制限対象駒が存在。',
   },
   {
     key: 'a',
@@ -57,44 +57,44 @@ export const GROUP_RULE_SPECS = [
     maxLimit: 180,
     limitType: '固定 (180)',
     costVariation: 'なし',
-    deckRestriction: 'グローリー専用ルール（禁止・制限あり）',
-    note: 'コスト上限180固定。一部駒の使用制限等。',
+    deckRestriction: 'グローリー独自の駒制限あり（ロイヤルとは別）',
+    note: 'コスト上限180固定。ロイヤルとは別枠の使用制限・禁止駒あり。',
   },
   {
     key: '5',
     defaultLimit: 200,
     maxLimit: 260,
     limitType: '階層別変動',
-    costVariation: '印別コスト上下あり',
+    costVariation: '印上下＋例外キャラ個別指定（最大-20級）',
     deckRestriction: '階層ごとの指定条件',
-    note: '攻略する階層によりコスト上限も印増減も変わる。',
+    note: '階層により上限や印増減が変動。キャラにより最大-20程度コスト低下する例外あり。',
   },
   {
     key: '6',
-    defaultLimit: 200,
+    defaultLimit: 180,
     maxLimit: 320,
-    limitType: '可変 (最大320)',
+    limitType: '標準180〜200 (最大320)',
     costVariation: '開催ルールにより有無',
     deckRestriction: '闘技場イベント別ルール',
-    note: '珍しいがコスト上限320までありえる。',
+    note: '180か200が標準。珍しいが特殊大会で上限320までありえる。',
   },
   {
     key: '7',
     defaultLimit: 200,
     maxLimit: 320,
-    limitType: '可変 (最大320)',
+    limitType: '標準180〜200 (最大320)',
     costVariation: '開催ルールにより有無',
     deckRestriction: '闘技場イベント別ルール',
-    note: '珍しいがコスト上限320までありえる。',
+    note: '180か200が標準。珍しいが特殊大会で上限320までありえる。',
   },
   {
     key: '8',
     defaultLimit: 200,
     maxLimit: 320,
-    limitType: '可変 (最大320)',
+    limitType: '標準180〜200 (最大320)',
     costVariation: '開催ルールにより有無',
     deckRestriction: '闘技場イベント別ルール',
-    note: '珍しいがコスト上限320までありえる。',
+    note: '180か200が標準。珍しいが特殊大会で上限320までありえる。',
   },
   {
     key: '0',
@@ -115,6 +115,22 @@ export const GROUP_RULE_SPECS = [
     note: 'ID上の予備スロット。',
   },
 ];
+
+export function buildGroupSpecsMarkdown(notesMap = {}) {
+  const header = [
+    '# OTELLIA デッキグループ仕様メモ',
+    '',
+    '| ID | グループ | コスト上限 | コスト増減 | 編成制限 | メモ |',
+    '|---|---|---|---|---|---|',
+  ];
+  const rows = GROUP_RULE_SPECS.map((spec) => {
+    const info = GROUP_BY_KEY[spec.key];
+    const note = notesMap[spec.key] !== undefined ? notesMap[spec.key] : spec.note;
+    const clean = (s) => String(s || '').replace(/\|/g, '｜').replace(/\r?\n/g, ' ');
+    return `| ${spec.key} | ${clean(info?.label)} | ${clean(spec.limitType)} | ${clean(spec.costVariation)} | ${clean(spec.deckRestriction)} | ${clean(note)} |`;
+  });
+  return [...header, ...rows].join('\n');
+}
 
 export const SEAL_NAME_MAP = {
   1: '強化',
@@ -162,7 +178,7 @@ export const ATTR_LABELS = {
   dragon: '竜',
 };
 
-export const SAMPLE_CHARACTERS = {
+const RAW_CHARACTERS = {
   8167: { id: 8167, name: '[風紀委員]セルフィ', attr: 'god', rarity: 'S+', cost: 20, type: 2, hp: 2795, atk: 1262 },
   8179: { id: 8179, name: '[轟く雷霆]ゼウス', attr: 'god', rarity: 'S+', cost: 20, type: 6, hp: 2820, atk: 1297 },
   8196: { id: 8196, name: '[愛の保育士さん]ジニア', attr: 'god', rarity: 'S+', cost: 20, type: 6, hp: 2802, atk: 1325 },
@@ -202,6 +218,18 @@ export const SAMPLE_CHARACTERS = {
   5453: { id: 5453, name: '竜之進', attr: 'dragon', rarity: 'C', cost: 5, type: 6, hp: 510, atk: 510 },
 };
 
+function enrichCharacter(c) {
+  const bucket = getRarityBucket(c.rarity);
+  const hpPlus = bucket === 'S' ? 50 : bucket === 'A' ? 25 : 10;
+  const atkPlus = bucket === 'S' ? 50 : bucket === 'A' ? 25 : 10;
+  const maxLv = bucket === 'S' ? 80 : bucket === 'A' ? 70 : bucket === 'B' ? 40 : 20;
+  return { ...c, hpPlus, atkPlus, maxLv };
+}
+
+export const SAMPLE_CHARACTERS = Object.fromEntries(
+  Object.entries(RAW_CHARACTERS).map(([id, c]) => [id, enrichCharacter(c)])
+);
+
 export function getSampleChar(id) {
   if (!id || id <= 0) return null;
   return SAMPLE_CHARACTERS[id] || null;
@@ -211,7 +239,6 @@ export function calcCharEffectiveCost(ch, sealModifiers = [], charExceptions = [
   if (!ch) return { base: 0, effective: 0, delta: 0 };
   const bucket = getRarityBucket(ch.rarity);
 
-  // 個別キャラ例外指定を優先・合算
   const sealDelta = sealModifiers.reduce((acc, mod) => {
     if (mod.sealId === ch.type && mod.rarityBucket === bucket) {
       return acc + Number(mod.delta || 0);
@@ -268,7 +295,6 @@ export function calcDeckSummary(deck, sealModifiers = [], charExceptions = []) {
   };
 }
 
-// 各デッキ: コメントは最大40文字をリアルに検証できるよう40文字相当を設定、deckCodeは実仕様の50桁
 export const SAMPLE_DECKS = [
   {
     id: 'deck-season-god',
@@ -292,7 +318,7 @@ export const SAMPLE_DECKS = [
     name: '混合：マナデッキ',
     groupKey: '2',
     deckType: 'mixed',
-    comment: 'Ｓ闘士ー２・Ａ闘士＋１・ゼウス個別ー２想定のカップ戦用。Ｂ１枠で１８０ぴったりに調整',
+    comment: 'Ｓ闘士ー２・Ａ闘士＋１・ゼウス個別ー２想定のカップ戦用。Ｂ１枠で１６０〜調整',
     createdAt: '2026-11-18 19:45',
     leaderId: 8167,
     subs: [

@@ -50,23 +50,61 @@ export const RARITY_BORDER_PRESETS = {
 
 export const DEFAULT_MATRIX_CONFIG = {
   cellSize: 20,
-  cardCellSize: 11,
+  cardCellSize: 12,
   gap: 2,
-  borderWidth: 2,
+  borderWidth: 3,
   radius: 0,
   leaderMarker: 'dot', // 'blank' | 'dot' | 'L'
 };
 
 export const DEFAULT_FONTS = {
-  ui: 'ibm-plex-sans-jp',
-  mono: 'ibm-plex-mono',
+  ui: 'noto-sans-jp',
+  mono: 'roboto-mono',
 };
 
 export const DEFAULT_CARD_MIXER = {
   visualLayout: 'stacked', // 'stacked' | 'inline'
-  showMetaLine: true,
-  commentSize: 11,
+  showMetaLine: false,
+  commentSize: 10,
 };
+
+export const DEFAULT_COST_OVERLAY = {
+  placement: 'top-tag-bottom-num', // 'top-tag-bottom-num' | 'bottom-right-badge' | 'top-right-delta' | 'bottom-bar'
+  light: {
+    downBg: '#18181b',
+    downText: '#fde047',
+    downBorder: '#eab308',
+    upBg: '#7f1d1d',
+    upText: '#fecaca',
+    upBorder: '#ef4444',
+    normalBg: '#ffffff',
+    normalText: '#0f172a',
+    normalBorder: '#94a3b8',
+  },
+  dark: {
+    downBg: '#090d16',
+    downText: '#fde047',
+    downBorder: '#facc15',
+    upBg: '#450a0a',
+    upText: '#fca5a5',
+    upBorder: '#f87171',
+    normalBg: '#161a22',
+    normalText: '#f1f5f9',
+    normalBorder: '#475569',
+  },
+};
+
+export const BG_PATTERN_OPTIONS = [
+  { id: 'none', label: '無地', desc: '純色背景のみ' },
+  { id: 'grid', label: '標準方眼', desc: '24px等間隔ライン' },
+  { id: 'fine-grid', label: '精密設計方眼', desc: '96px大枠＋16px細線' },
+  { id: 'dots', label: '微細ドット', desc: '20px点群パターン' },
+  { id: 'cross', label: 'クロスヘア', desc: '測量・研究所十字印' },
+  { id: 'diagonal', label: '斜線ハッチ', desc: '45°極薄製図斜線' },
+  { id: 'isometric', label: 'ダイヤ格子', desc: '盤面・紋章風斜交格子' },
+  { id: 'noise', label: 'マット粒子', desc: '極微細紙面ノイズ' },
+  { id: 'vignette', label: 'ビネット', desc: '中央明・外周締まり' },
+];
 
 export const DEFAULT_GROUP_GRADIENTS = {
   '0': { start: '#1fb0b5', mid: '#63b68c', useMid: false, end: '#a9bd62', angle: 135, textColor: '#f8fafc' },
@@ -90,5 +128,6 @@ export function createDefaultExtensions() {
     groupGradients: structuredClone(DEFAULT_GROUP_GRADIENTS),
     fonts: { ...DEFAULT_FONTS },
     cardMixer: { ...DEFAULT_CARD_MIXER },
+    costOverlay: structuredClone(DEFAULT_COST_OVERLAY),
   };
 }

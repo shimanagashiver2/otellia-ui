@@ -1,7 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
+import { buildGroupSpecsMarkdown } from '@/data/sampleDecks';
 import { generateCssTokens } from '@/design-versions/cssExport';
+import {
+  getGroupNotesServerSnapshot,
+  getGroupNotesSnapshot,
+  subscribeGroupNotes,
+} from '@/design-versions/labStore';
 import { useDialogLightDismiss } from './ComponentsSection';
 
 export default function ExportDialog({
@@ -14,13 +20,22 @@ export default function ExportDialog({
   const [importDraft, setImportDraft] = useState('');
   const [importError, setImportError] = useState('');
 
+  const groupNotes = useSyncExternalStore(
+    subscribeGroupNotes,
+    getGroupNotesSnapshot,
+    getGroupNotesServerSnapshot
+  );
+
   useDialogLightDismiss(dialogRef, () => {
     setImportError('');
   });
 
   const cssOutput = generateCssTokens(activeVersion);
   const jsonOutput = JSON.stringify(activeVersion, null, 2);
-  const displayCode = tab === 'css' ? cssOutput : jsonOutput;
+  const specsOutput = buildGroupSpecsMarkdown(groupNotes);
+
+  const displayCode =
+    tab === 'css' ? cssOutput : tab === 'specs' ? specsOutput : jsonOutput;
 
   const handleCopy = async () => {
     try {
@@ -75,6 +90,13 @@ export default function ExportDialog({
           onClick={() => setTab('json')}
         >
           バージョンJSON
+        </button>
+        <button
+          type="button"
+          className={`comp-tab-btn ${tab === 'specs' ? 'is-active' : ''}`}
+          onClick={() => setTab('specs')}
+        >
+          グループ仕様メモ
         </button>
         <button
           type="button"

@@ -56,12 +56,13 @@ const DEMO_50_ID = 'A3f9K2mQx8Lp4Z1nW7vB6hTc9Yd2Rs5Fj8Mk4Np1Qw7Xz3Lu9';
 export default function ComponentsSection({ version, themeMode, viewportWidth }) {
   const [sampleTab, setSampleTab] = useState('warehouse');
   const [tabVariant, setTabVariant] = useState('underline');
+  const [alertStyle, setAlertStyle] = useState('log'); // 'log' | 'border-left'
   const [deckIdSample, setDeckIdSample] = useState(DEMO_50_ID);
   const [deckNameSample, setDeckNameSample] = useState('混合：マナデッキ');
   const [commentSample, setCommentSample] = useState(
-    'Ｓ闘士ー２・Ａ闘士＋１・ゼウス個別ー２想定のカップ戦用。Ｂ１枠で１８０ぴったりに調整'
+    'Ｓ闘士ー２・Ａ闘士＋１・ゼウス個別ー２想定のカップ戦用。Ｂ１枠で１６０〜調整'
   );
-  const [rangeVal, setRangeVal] = useState(200);
+  const [rangeVal, setRangeVal] = useState(180);
   const sampleDialogRef = useRef(null);
 
   useDialogLightDismiss(sampleDialogRef);
@@ -70,10 +71,10 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
     <section className="lab-section" id="components">
       <div className="lab-section-head">
         <div>
-          <span className="lab-kicker">SECTION 06 // SHARED UI KIT</span>
-          <h2 className="lab-section-title">共通UIコンポーネント見本（角丸統一・実戦仕様）</h2>
+          <span className="lab-kicker">SECTION 06 // ANTI-SLOP SHARED UI KIT</span>
+          <h2 className="lab-section-title">共通UIコンポーネント見本（脱AI Slop仕様）</h2>
           <p className="lab-section-desc">
-            「部品角丸 (badgeRadius)」と連動し、50桁ID省略バー・12文字/40文字カウンタ付きフォーム・下線タブ等の実用UIを確認できます。
+            均等3列カード・Cardocalypse・左太線乱用・過剰アクセント塗りを排除し、1px仕切り線＋非対称2列＋単一主ボタン原則で構成した実用UIリファレンスです。
           </p>
         </div>
       </div>
@@ -83,66 +84,16 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
         themeMode={themeMode}
         viewportWidth={viewportWidth}
         renderContent={() => (
-          <div className="components-grid">
-            <div className="comp-card">
-              <div className="comp-card-head">
-                <h4>ボタン &amp; タブ比較</h4>
-                <div className="ctrl-segmented">
-                  <button
-                    type="button"
-                    className={tabVariant === 'underline' ? 'is-active' : ''}
-                    onClick={() => setTabVariant('underline')}
-                  >
-                    下線型
-                  </button>
-                  <button
-                    type="button"
-                    className={tabVariant === 'box' ? 'is-active' : ''}
-                    onClick={() => setTabVariant('box')}
-                  >
-                    ボックス型
-                  </button>
+          <div className="anti-slop-kit">
+            {/* 非対称 1.35fr : 1fr レイアウト */}
+            <div className="kit-asymmetric-grid">
+              {/* 左列：入力・編集フォーム実戦セット */}
+              <div className="kit-surface-block">
+                <div className="kit-block-head">
+                  <h4>実戦フォーム &amp; 50桁ID読込</h4>
+                  <span className="kit-mono-note">12字 / 40字制限対応</span>
                 </div>
-              </div>
 
-              <div className="comp-row">
-                <button type="button" className="ui-btn is-primary">
-                  倉庫に保存
-                </button>
-                <button type="button" className="ui-btn is-secondary">
-                  IDをコピー
-                </button>
-                <button type="button" className="ui-btn is-ghost">
-                  キャンセル
-                </button>
-                <button type="button" className="ui-btn is-danger">
-                  削除
-                </button>
-              </div>
-
-              <div className={`comp-tabs is-${tabVariant}`} role="tablist" aria-label="見本タブ">
-                {[
-                  { id: 'warehouse', label: 'マイデッキ (6)' },
-                  { id: 'editor', label: 'デッキ編集' },
-                  { id: 'rules', label: '特殊ルール' },
-                ].map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={sampleTab === t.id}
-                    className={`comp-tab-btn ${sampleTab === t.id ? 'is-active' : ''}`}
-                    onClick={() => setSampleTab(t.id)}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="comp-card">
-              <h4>50桁デッキIDバー &amp; 文字数制限入力</h4>
-              <div className="comp-form-stack">
                 <div className="deck-id-bar">
                   <input
                     type="text"
@@ -175,24 +126,40 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
                   </button>
                 </div>
 
-                <label className="comp-field-label">
-                  <div className="comp-field-meta">
-                    <span>デッキ名</span>
-                    <small className="num-tabular">{deckNameSample.length} / 12</small>
-                  </div>
-                  <input
-                    type="text"
-                    className="ui-input"
-                    maxLength={12}
-                    value={deckNameSample}
-                    onChange={(e) => setDeckNameSample(e.target.value)}
-                  />
-                </label>
+                <div className="kit-divider" />
+
+                <div className="kit-form-two-col">
+                  <label className="comp-field-label">
+                    <div className="comp-field-meta">
+                      <span>デッキ名</span>
+                      <small className="num-tabular">{deckNameSample.length}/12</small>
+                    </div>
+                    <input
+                      type="text"
+                      className="ui-input"
+                      maxLength={12}
+                      value={deckNameSample}
+                      onChange={(e) => setDeckNameSample(e.target.value)}
+                    />
+                  </label>
+
+                  <label className="comp-field-label">
+                    <div className="comp-field-meta">
+                      <span>グループ</span>
+                      <small>ID先頭判定</small>
+                    </div>
+                    <select className="ui-select" defaultValue="2" aria-label="グループ選択見本">
+                      <option value="1">基本デッキ (200)</option>
+                      <option value="2">カップ戦専用 (160前後)</option>
+                      <option value="6">闘技場専用A (180〜320)</option>
+                    </select>
+                  </label>
+                </div>
 
                 <label className="comp-field-label">
                   <div className="comp-field-meta">
                     <span>コメント</span>
-                    <small className="num-tabular">{commentSample.length} / 40</small>
+                    <small className="num-tabular">{commentSample.length}/40</small>
                   </div>
                   <input
                     type="text"
@@ -202,28 +169,17 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
                     onChange={(e) => setCommentSample(e.target.value)}
                   />
                 </label>
-              </div>
-            </div>
 
-            <div className="comp-card">
-              <h4>実用コントロール &amp; 通知・モーダル</h4>
-              <div className="comp-form-stack">
-                <div className="comp-input-row">
-                  <select className="ui-select" defaultValue="2" aria-label="グループ選択見本">
-                    <option value="1">基本デッキ (200固定)</option>
-                    <option value="2">カップ戦専用 (印/個別変動)</option>
-                    <option value="6">闘技場専用A (最大320)</option>
-                  </select>
-                </div>
+                <div className="kit-divider" />
 
                 <div className="comp-checks-row">
                   <label className="comp-check">
                     <input type="checkbox" defaultChecked />
-                    <span>補正後コストで並び替え</span>
+                    <span>ATK / HP 切替時にサブ15体を降順ソート</span>
                   </label>
                   <label className="comp-check">
                     <input type="checkbox" defaultChecked />
-                    <span>空き枠を後ろへ自動整頓</span>
+                    <span>空き枠を後ろへ自動整頓してID発行</span>
                   </label>
                 </div>
 
@@ -239,26 +195,125 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
                   />
                   <output className="num-tabular">{rangeVal}</output>
                 </label>
+              </div>
 
-                <div className="comp-alerts">
-                  <div className="ui-alert is-info">
-                    50桁IDを解析し、16体のステータスを計算しました。
-                  </div>
-                  <div className="ui-alert is-danger">
-                    コストが上限（180）を 4 超過しています。
-                  </div>
+              {/* 右列：アクション階層・タブ・通知・モーダル */}
+              <div className="kit-surface-block">
+                <div className="kit-block-head">
+                  <h4>ボタン階層（単一主アクション原則）</h4>
+                  <button
+                    type="button"
+                    className="ui-btn is-secondary is-sm"
+                    onClick={() => sampleDialogRef.current?.showModal()}
+                  >
+                    &lt;dialog&gt; 確認
+                  </button>
                 </div>
 
                 <div className="comp-row">
-                  <button
-                    type="button"
-                    className="ui-btn is-secondary"
-                    onClick={() => sampleDialogRef.current?.showModal()}
-                  >
-                    サンプルモーダルを開く (&lt;dialog&gt;)
+                  <button type="button" className="ui-btn is-primary">
+                    倉庫に保存
+                  </button>
+                  <button type="button" className="ui-btn is-secondary">
+                    IDをコピー
+                  </button>
+                  <button type="button" className="ui-btn is-ghost">
+                    キャンセル
+                  </button>
+                  <button type="button" className="ui-btn is-danger">
+                    削除
                   </button>
                 </div>
+
+                <div className="kit-divider" />
+
+                <div className="kit-block-head">
+                  <h4>タブ表現</h4>
+                  <div className="ctrl-segmented">
+                    <button
+                      type="button"
+                      className={tabVariant === 'underline' ? 'is-active' : ''}
+                      onClick={() => setTabVariant('underline')}
+                    >
+                      下線型
+                    </button>
+                    <button
+                      type="button"
+                      className={tabVariant === 'box' ? 'is-active' : ''}
+                      onClick={() => setTabVariant('box')}
+                    >
+                      セグメント型
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`comp-tabs is-${tabVariant}`} role="tablist" aria-label="見本タブ">
+                  {[
+                    { id: 'warehouse', label: 'マイデッキ (6)' },
+                    { id: 'editor', label: 'デッキ編集' },
+                    { id: 'rules', label: 'コストルール' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={sampleTab === t.id}
+                      className={`comp-tab-btn ${sampleTab === t.id ? 'is-active' : ''}`}
+                      onClick={() => setSampleTab(t.id)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="kit-divider" />
+
+                <div className="kit-block-head">
+                  <h4>通知表現比較（左太線 vs 研究所ログ）</h4>
+                  <div className="ctrl-segmented">
+                    <button
+                      type="button"
+                      className={alertStyle === 'log' ? 'is-active' : ''}
+                      onClick={() => setAlertStyle('log')}
+                    >
+                      極細1pxログ型
+                    </button>
+                    <button
+                      type="button"
+                      className={alertStyle === 'border-left' ? 'is-active' : ''}
+                      onClick={() => setAlertStyle('border-left')}
+                    >
+                      従来左帯型
+                    </button>
+                  </div>
+                </div>
+
+                <div className={`comp-alerts style-${alertStyle}`}>
+                  <div className="ui-alert is-info">
+                    <span className="alert-tag num-tabular">INFO</span>
+                    <span>50桁IDを解析し、16体のステータスを計算しました。</span>
+                  </div>
+                  <div className="ui-alert is-warning">
+                    <span className="alert-tag num-tabular">WARN</span>
+                    <span>S駒が上限（2枚）を超過しています（現在3枚）。</span>
+                  </div>
+                  <div className="ui-alert is-danger">
+                    <span className="alert-tag num-tabular">OVER</span>
+                    <span>調整後コストが上限（160）を 4 超過しています。</span>
+                  </div>
+                </div>
               </div>
+            </div>
+
+            {/* AI Slop 抑止チェックサマリー */}
+            <div className="slop-checklist-bar">
+              <span className="ctrl-label">ANTI-SLOP CHECK</span>
+              <span>Cardocalypse(入れ子箱)排除</span>
+              <span>均一3列グリッド廃止</span>
+              <span>単一アクセント原則</span>
+              <span>角丸トークン完全統一</span>
+              <span>等幅数値＆桁幅最適化</span>
+              <span>otellia小文字専用</span>
             </div>
           </div>
         )}

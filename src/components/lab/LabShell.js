@@ -353,6 +353,21 @@ export default function LabShell() {
             version={activeVersion}
             themeMode={themeMode === 'split' ? 'split' : effectiveMode}
             viewportWidth={labState.viewportWidth}
+            onUpdateCostOverlayColor={(mode, key, val) =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                costOverlay: {
+                  ...v.costOverlay,
+                  [mode]: { ...v.costOverlay?.[mode], [key]: val },
+                },
+              }))
+            }
+            onChangeCostOverlayPlacement={(placement) =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                costOverlay: { ...v.costOverlay, placement },
+              }))
+            }
           />
         )}
 

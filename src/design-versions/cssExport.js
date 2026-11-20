@@ -6,23 +6,90 @@ import {
 } from '@/lib/gradient';
 import { resolveMonoFontFamily, resolveUiFontFamily } from './fonts';
 
-function resolveBgPattern(pattern, patternColor) {
-  if (pattern === 'dots') {
-    return {
-      image: `radial-gradient(${patternColor} 1px, transparent 1px)`,
-      size: '20px 20px',
-    };
+function scalePatternColor(color, strength = 1, fallbackRgb = '15, 23, 42') {
+  const s = Math.max(0.2, Math.min(3, Number(strength) || 1));
+  if (typeof color !== 'string') return `rgba(${fallbackRgb}, ${0.06 * s})`;
+  const match = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/i);
+  if (!match) return color;
+  const [, r, g, b, rawA] = match;
+  const baseA = rawA !== undefined ? Number(rawA) : 0.1;
+  const scaledA = Math.max(0.01, Math.min(0.65, Number((baseA * s).toFixed(3))));
+  return `rgba(${r}, ${g}, ${b}, ${scaledA})`;
+}
+
+export function resolveBgPattern(pattern, patternColor, strength = 1, mode = 'light') {
+  const c = scalePatternColor(
+    patternColor,
+    strength,
+    mode === 'dark' ? '148, 163, 184' : '15, 23, 42'
+  );
+  const cStrong = scalePatternColor(
+    patternColor,
+    strength * 1.9,
+    mode === 'dark' ? '148, 163, 184' : '15, 23, 42'
+  );
+
+  switch (pattern) {
+    case 'dots':
+      return {
+        image: `radial-gradient(${cStrong} 1px, transparent 1px)`,
+        size: '20px 20px',
+      };
+    case 'grid':
+      return {
+        image: `linear-gradient(to right, ${c} 1px, transparent 1px), linear-gradient(to bottom, ${c} 1px, transparent 1px)`,
+        size: '24px 24px',
+      };
+    case 'fine-grid':
+      return {
+        image: [
+          `linear-gradient(to right, ${cStrong} 1px, transparent 1px)`,
+          `linear-gradient(to bottom, ${cStrong} 1px, transparent 1px)`,
+          `linear-gradient(to right, ${c} 1px, transparent 1px)`,
+          `linear-gradient(to bottom, ${c} 1px, transparent 1px)`,
+        ].join(', '),
+        size: '96px 96px, 96px 96px, 16px 16px, 16px 16px',
+      };
+    case 'cross': {
+      const stroke = encodeURIComponent(cStrong);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M14 10v8M10 14h8' stroke='${stroke}' stroke-width='1' fill='none'/></svg>`;
+      return {
+        image: `url("data:image/svg+xml,${svg}")`,
+        size: '28px 28px',
+      };
+    }
+    case 'diagonal':
+      return {
+        image: `repeating-linear-gradient(-45deg, transparent 0 11px, ${c} 11px 12px)`,
+        size: 'auto',
+      };
+    case 'isometric': {
+      const stroke = encodeURIComponent(c);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M16 0L32 16L16 32L0 16Z' stroke='${stroke}' stroke-width='1' fill='none'/></svg>`;
+      return {
+        image: `url("data:image/svg+xml,${svg}")`,
+        size: '32px 32px',
+      };
+    }
+    case 'noise': {
+      const opacity = Math.min(0.22, 0.055 * (Number(strength) || 1)).toFixed(3);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='${opacity}'/></svg>`;
+      return {
+        image: `url("data:image/svg+xml,${svg}")`,
+        size: '140px 140px',
+      };
+    }
+    case 'vignette':
+      return {
+        image: `radial-gradient(circle at 50% 25%, transparent 35%, ${cStrong} 100%)`,
+        size: '100% 100%',
+      };
+    default:
+      return {
+        image: 'none',
+        size: 'auto',
+      };
   }
-  if (pattern === 'grid') {
-    return {
-      image: `linear-gradient(to right, ${patternColor} 1px, transparent 1px), linear-gradient(to bottom, ${patternColor} 1px, transparent 1px)`,
-      size: '24px 24px',
-    };
-  }
-  return {
-    image: 'none',
-    size: 'auto',
-  };
 }
 
 export function versionToStyleVars(version, mode = 'light') {
@@ -30,11 +97,17 @@ export function versionToStyleVars(version, mode = 'light') {
   const theme = version.themes?.[safeMode] || version.themes.light;
   const attrs = version.attributes?.[safeMode] || version.attributes.light;
   const rarity = version.rarityBorders?.[safeMode] || version.rarityBorders.light;
+  const costOv = version.costOverlay?.[safeMode] || version.costOverlay?.light || {};
   const shape = version.shape || {};
   const matrix = version.matrix || {};
   const fonts = version.fonts || {};
   const cardMixer = version.cardMixer || {};
-  const bgPattern = resolveBgPattern(shape.bgPattern, theme.bgPatternColor);
+  const bgPattern = resolveBgPattern(
+    shape.bgPattern,
+    theme.bgPatternColor,
+    shape.bgPatternStrength ?? 1,
+    safeMode
+  );
 
   const vars = {
     '--font-ui': resolveUiFontFamily(fonts.ui),
@@ -78,13 +151,23 @@ export function versionToStyleVars(version, mode = 'light') {
     '--rarity-c': rarity.C,
     '--rarity-empty': rarity.empty,
 
+    '--cost-down-bg': costOv.downBg || '#18181b',
+    '--cost-down-text': costOv.downText || '#fde047',
+    '--cost-down-border': costOv.downBorder || '#eab308',
+    '--cost-up-bg': costOv.upBg || '#7f1d1d',
+    '--cost-up-text': costOv.upText || '#fecaca',
+    '--cost-up-border': costOv.upBorder || '#ef4444',
+    '--cost-normal-bg': costOv.normalBg || '#ffffff',
+    '--cost-normal-text': costOv.normalText || '#0f172a',
+    '--cost-normal-border': costOv.normalBorder || '#94a3b8',
+
     '--matrix-cell-size': `${Number(matrix.cellSize ?? 20)}px`,
-    '--card-matrix-cell-size': `${Number(matrix.cardCellSize ?? 11)}px`,
+    '--card-matrix-cell-size': `${Number(matrix.cardCellSize ?? 12)}px`,
     '--matrix-gap': `${Number(matrix.gap ?? 2)}px`,
-    '--matrix-border-width': `${Number(matrix.borderWidth ?? 2)}px`,
+    '--matrix-border-width': `${Number(matrix.borderWidth ?? 3)}px`,
     '--matrix-radius': `${Number(matrix.radius ?? 0)}px`,
 
-    '--dc-comment-size': `${Number(cardMixer.commentSize ?? 11)}px`,
+    '--dc-comment-size': `${Number(cardMixer.commentSize ?? 10)}px`,
 
     accentColor: theme.accent,
   };
@@ -109,12 +192,24 @@ export function generateCssTokens(version) {
   const darkAttr = version.attributes.dark;
   const lightRarity = version.rarityBorders.light;
   const darkRarity = version.rarityBorders.dark;
+  const lightCost = version.costOverlay?.light || {};
+  const darkCost = version.costOverlay?.dark || {};
   const shape = version.shape;
   const matrix = version.matrix;
   const fonts = version.fonts || {};
 
-  const lightPattern = resolveBgPattern(shape.bgPattern, light.bgPatternColor);
-  const darkPattern = resolveBgPattern(shape.bgPattern, dark.bgPatternColor);
+  const lightPattern = resolveBgPattern(
+    shape.bgPattern,
+    light.bgPatternColor,
+    shape.bgPatternStrength ?? 1,
+    'light'
+  );
+  const darkPattern = resolveBgPattern(
+    shape.bgPattern,
+    dark.bgPatternColor,
+    shape.bgPatternStrength ?? 1,
+    'dark'
+  );
 
   const groupLines = GROUP_ITEMS.map((g) => {
     const cfg = version.groupGradients[g.key];
@@ -127,7 +222,9 @@ export function generateCssTokens(version) {
   return `/* =====================================================
  * OTELLIA UI Design Tokens — ${version.name}
  * Card Pattern: ${version.cardPattern} | Group Mode: ${version.groupApplyMode}
- * Fonts: UI=${fonts.ui || 'ibm-plex-sans-jp'} / NUM=${fonts.mono || 'ibm-plex-mono'}
+ * BG Pattern: ${shape.bgPattern} (x${shape.bgPatternStrength ?? 1})
+ * Cost Overlay Placement: ${version.costOverlay?.placement || 'top-tag-bottom-num'}
+ * Fonts: UI=${fonts.ui || 'noto-sans-jp'} / NUM=${fonts.mono || 'roboto-mono'}
  * ===================================================== */
 
 :root {
@@ -168,6 +265,17 @@ export function generateCssTokens(version) {
   --color-dragon: ${lightAttr.dragon};
   --color-neutral: ${lightAttr.neutral};
 
+  /* コスト増減表示カラー（Light） */
+  --cost-down-bg: ${lightCost.downBg};
+  --cost-down-text: ${lightCost.downText};
+  --cost-down-border: ${lightCost.downBorder};
+  --cost-up-bg: ${lightCost.upBg};
+  --cost-up-text: ${lightCost.upText};
+  --cost-up-border: ${lightCost.upBorder};
+  --cost-normal-bg: ${lightCost.normalBg};
+  --cost-normal-text: ${lightCost.normalText};
+  --cost-normal-border: ${lightCost.normalBorder};
+
   /* 4x4マトリクス レアリティ枠線（Light） */
   --rarity-border-s: ${lightRarity.S};
   --rarity-border-a: ${lightRarity.A};
@@ -175,7 +283,7 @@ export function generateCssTokens(version) {
   --rarity-border-c: ${lightRarity.C};
   --rarity-border-empty: ${lightRarity.empty};
   --matrix-cell-size: ${matrix.cellSize}px;
-  --card-matrix-cell-size: ${matrix.cardCellSize ?? 11}px;
+  --card-matrix-cell-size: ${matrix.cardCellSize ?? 12}px;
   --matrix-gap: ${matrix.gap}px;
   --matrix-border-width: ${matrix.borderWidth}px;
   --matrix-radius: ${matrix.radius}px;
@@ -207,6 +315,17 @@ html.dark-mode {
   --color-devil: ${darkAttr.devil};
   --color-dragon: ${darkAttr.dragon};
   --color-neutral: ${darkAttr.neutral};
+
+  /* コスト増減表示カラー（Dark） */
+  --cost-down-bg: ${darkCost.downBg};
+  --cost-down-text: ${darkCost.downText};
+  --cost-down-border: ${darkCost.downBorder};
+  --cost-up-bg: ${darkCost.upBg};
+  --cost-up-text: ${darkCost.upText};
+  --cost-up-border: ${darkCost.upBorder};
+  --cost-normal-bg: ${darkCost.normalBg};
+  --cost-normal-text: ${darkCost.normalText};
+  --cost-normal-border: ${darkCost.normalBorder};
 
   /* 4x4マトリクス レアリティ枠線（Dark） */
   --rarity-border-s: ${darkRarity.S};

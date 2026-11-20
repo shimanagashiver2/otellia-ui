@@ -3,7 +3,7 @@ import v1LabSlate from './v1-lab-slate';
 import v2LabPrecision from './v2-lab-precision';
 import v3LabSoft from './v3-lab-soft';
 import v4SharpLab from './v4-sharp-lab';
-import { createDefaultExtensions } from './defaults';
+import { BG_PATTERN_OPTIONS, createDefaultExtensions } from './defaults';
 
 export const BUILTIN_VERSIONS = [
   v4SharpLab,
@@ -42,6 +42,8 @@ const VALID_APPLY_MODES = new Set([
   'tinted',
 ]);
 
+const VALID_BG_PATTERNS = new Set(BG_PATTERN_OPTIONS.map((p) => p.id));
+
 function mergeSection(base, incoming) {
   return {
     ...(base || {}),
@@ -61,7 +63,6 @@ export function normalizeVersion(raw, fallback = v4SharpLab) {
       ...(base.groupGradients?.[key] || {}),
       ...(src.groupGradients?.[key] || {}),
     };
-    // 中間色が空文字のときにCSSグラデーションが壊れないよう正規化
     if (!merged.mid || typeof merged.mid !== 'string' || !merged.mid.trim()) {
       merged.useMid = false;
       merged.mid = defaults.groupGradients[key].mid;
@@ -69,16 +70,24 @@ export function normalizeVersion(raw, fallback = v4SharpLab) {
     mergedGroupGradients[key] = merged;
   }
 
-  const rawPattern = src.cardPattern || base.cardPattern || 'game-band';
+  const rawPattern = src.cardPattern || base.cardPattern || 'datasheet';
   const mappedPattern = LEGACY_CARD_PATTERN_MAP[rawPattern] || rawPattern;
   const cardPattern = VALID_CARD_PATTERNS.has(mappedPattern)
     ? mappedPattern
-    : 'game-band';
+    : 'datasheet';
 
   const rawApplyMode = src.groupApplyMode || base.groupApplyMode || 'title-band';
   const groupApplyMode = VALID_APPLY_MODES.has(rawApplyMode)
     ? rawApplyMode
     : 'title-band';
+
+  const shapeMerged = mergeSection(base.shape, src.shape);
+  if (!VALID_BG_PATTERNS.has(shapeMerged.bgPattern)) {
+    shapeMerged.bgPattern = 'none';
+  }
+  if (!Number.isFinite(Number(shapeMerged.bgPatternStrength))) {
+    shapeMerged.bgPatternStrength = 1;
+  }
 
   return {
     id: typeof src.id === 'string' && src.id.trim() ? src.id.trim() : base.id,
@@ -93,7 +102,7 @@ export function normalizeVersion(raw, fallback = v4SharpLab) {
     builtin: Boolean(src.builtin && BUILTIN_VERSION_MAP[src.id]),
     cardPattern,
     groupApplyMode,
-    shape: mergeSection(base.shape, src.shape),
+    shape: shapeMerged,
     themes: {
       light: mergeSection(base.themes?.light, src.themes?.light),
       dark: mergeSection(base.themes?.dark, src.themes?.dark),
@@ -127,6 +136,20 @@ export function normalizeVersion(raw, fallback = v4SharpLab) {
       defaults.cardMixer,
       mergeSection(base.cardMixer, src.cardMixer)
     ),
+    costOverlay: {
+      placement:
+        src.costOverlay?.placement ||
+        base.costOverlay?.placement ||
+        defaults.costOverlay.placement,
+      light: mergeSection(
+        defaults.costOverlay.light,
+        mergeSection(base.costOverlay?.light, src.costOverlay?.light)
+      ),
+      dark: mergeSection(
+        defaults.costOverlay.dark,
+        mergeSection(base.costOverlay?.dark, src.costOverlay?.dark)
+      ),
+    },
     groupGradients: mergedGroupGradients,
   };
 }

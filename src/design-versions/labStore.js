@@ -10,6 +10,7 @@ import {
 const COLOR_SCHEME_KEY = 'otellia-ui-color-scheme';
 const THEME_MODE_KEY = 'otellia-ui-theme-mode';
 const GROUP_NOTES_KEY = 'otellia-ui-group-notes-v1';
+const SCHEMA_MIGRATION_KEY = 'otellia-ui-v4-rev2';
 
 const SERVER_LAB_SNAPSHOT = getInitialLabState();
 let clientLabCache = null;
@@ -19,31 +20,42 @@ function parseStoredLabState() {
   if (typeof window === 'undefined') return SERVER_LAB_SNAPSHOT;
   try {
     const raw = window.localStorage.getItem(LAB_STORAGE_KEY);
-    if (!raw) return getInitialLabState();
+    if (!raw) {
+      window.localStorage.setItem(SCHEMA_MIGRATION_KEY, '1');
+      return getInitialLabState();
+    }
     const parsed = JSON.parse(raw);
     const rawVersions = Array.isArray(parsed.versions) ? parsed.versions : [];
-    const normalized = rawVersions
+    const migratedRev2 = window.localStorage.getItem(SCHEMA_MIGRATION_KEY) === '1';
+
+    let normalized = rawVersions
       .filter((v) => v && typeof v === 'object')
       .map((v) => normalizeVersion(v, BUILTIN_VERSION_MAP[v.id]));
 
     const existingIds = new Set(normalized.map((v) => v.id));
-    const hadV4 = existingIds.has(DEFAULT_ACTIVE_VERSION_ID);
-
-    // 新規追加されたビルトイン案（例: v4-sharp-lab）を先頭補完
     const missingBuiltins = createInitialVersions().filter(
       (b) => !existingIds.has(b.id)
     );
-    const mergedVersions = [...missingBuiltins, ...normalized];
+    normalized = [...missingBuiltins, ...normalized];
 
-    // 初回v4導入時のみ v4-sharp-lab をアクティブ化してすぐ確認できるようにする
-    const activeId = !hadV4
+    if (!migratedRev2) {
+      const freshV4 = BUILTIN_VERSION_MAP[DEFAULT_ACTIVE_VERSION_ID];
+      normalized = normalized.map((v) =>
+        v.id === DEFAULT_ACTIVE_VERSION_ID
+          ? normalizeVersion(structuredClone(freshV4), freshV4)
+          : v
+      );
+      window.localStorage.setItem(SCHEMA_MIGRATION_KEY, '1');
+    }
+
+    const activeId = !migratedRev2
       ? DEFAULT_ACTIVE_VERSION_ID
-      : mergedVersions.some((v) => v.id === parsed.activeVersionId)
+      : normalized.some((v) => v.id === parsed.activeVersionId)
       ? parsed.activeVersionId
       : DEFAULT_ACTIVE_VERSION_ID;
 
     return {
-      versions: mergedVersions,
+      versions: normalized,
       activeVersionId: activeId,
       viewportWidth: parsed.viewportWidth || 'full',
       activeSection: parsed.activeSection || 'all',

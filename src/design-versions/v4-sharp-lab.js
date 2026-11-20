@@ -6,9 +6,9 @@ const v4SharpLab = {
   id: 'v4-sharp-lab',
   name: 'v4: Sharp Lab（ユーザー調整ベース）',
   description:
-    'ユーザー調整済みの配色・全11グループグラデ・角丸0pxシャープ基調・小型4×4を組み込んだ新標準案。',
+    'ユーザー調整済みの配色・Noto Sans JP × Roboto Mono・均等縦ラインdatasheet・小型4×4を組み込んだ最新標準案。',
   builtin: true,
-  cardPattern: 'game-band',
+  cardPattern: 'datasheet',
   groupApplyMode: 'title-band',
   shape: {
     cardRadius: 0,
@@ -17,6 +17,7 @@ const v4SharpLab = {
     borderWidth: 1,
     blur: 4,
     bgPattern: 'none',
+    bgPatternStrength: 1,
   },
   themes: {
     light: {
@@ -65,11 +66,20 @@ const v4SharpLab = {
   ...ext,
   matrix: {
     cellSize: 20,
-    cardCellSize: 11,
+    cardCellSize: 12,
     gap: 2,
     borderWidth: 3,
     radius: 0,
     leaderMarker: 'dot',
+  },
+  fonts: {
+    ui: 'noto-sans-jp',
+    mono: 'roboto-mono',
+  },
+  cardMixer: {
+    visualLayout: 'stacked',
+    showMetaLine: false,
+    commentSize: 10,
   },
 };
 
