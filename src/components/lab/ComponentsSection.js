@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { assetPath } from '@/lib/assetPath';
 import PreviewSplitWrapper from './PreviewSplitWrapper';
 
 function useDialogLightDismiss(dialogRef, onCloseDone) {
@@ -50,9 +51,17 @@ function useDialogLightDismiss(dialogRef, onCloseDone) {
 
 export { useDialogLightDismiss };
 
+const DEMO_50_ID = 'A3f9K2mQx8Lp4Z1nW7vB6hTc9Yd2Rs5Fj8Mk4Np1Qw7Xz3Lu9';
+
 export default function ComponentsSection({ version, themeMode, viewportWidth }) {
   const [sampleTab, setSampleTab] = useState('warehouse');
-  const [rangeVal, setRangeVal] = useState(195);
+  const [tabVariant, setTabVariant] = useState('underline');
+  const [deckIdSample, setDeckIdSample] = useState(DEMO_50_ID);
+  const [deckNameSample, setDeckNameSample] = useState('混合：マナデッキ');
+  const [commentSample, setCommentSample] = useState(
+    'Ｓ闘士ー２・Ａ闘士＋１・ゼウス個別ー２想定のカップ戦用。Ｂ１枠で１８０ぴったりに調整'
+  );
+  const [rangeVal, setRangeVal] = useState(200);
   const sampleDialogRef = useRef(null);
 
   useDialogLightDismiss(sampleDialogRef);
@@ -62,9 +71,9 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
       <div className="lab-section-head">
         <div>
           <span className="lab-kicker">SECTION 06 // SHARED UI KIT</span>
-          <h2 className="lab-section-title">共通UIコンポーネント見本</h2>
+          <h2 className="lab-section-title">共通UIコンポーネント見本（角丸統一・実戦仕様）</h2>
           <p className="lab-section-desc">
-            ボタン、入力フォーム、タブ、アラート、ネイティブ &lt;dialog&gt; モーダルまで、採用バージョンのトークンがどう馴染むかを確認します。
+            「部品角丸 (badgeRadius)」と連動し、50桁ID省略バー・12文字/40文字カウンタ付きフォーム・下線タブ等の実用UIを確認できます。
           </p>
         </div>
       </div>
@@ -76,7 +85,26 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
         renderContent={() => (
           <div className="components-grid">
             <div className="comp-card">
-              <h4>ボタン &amp; タブ</h4>
+              <div className="comp-card-head">
+                <h4>ボタン &amp; タブ比較</h4>
+                <div className="ctrl-segmented">
+                  <button
+                    type="button"
+                    className={tabVariant === 'underline' ? 'is-active' : ''}
+                    onClick={() => setTabVariant('underline')}
+                  >
+                    下線型
+                  </button>
+                  <button
+                    type="button"
+                    className={tabVariant === 'box' ? 'is-active' : ''}
+                    onClick={() => setTabVariant('box')}
+                  >
+                    ボックス型
+                  </button>
+                </div>
+              </div>
+
               <div className="comp-row">
                 <button type="button" className="ui-btn is-primary">
                   倉庫に保存
@@ -92,7 +120,7 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
                 </button>
               </div>
 
-              <div className="comp-tabs" role="tablist" aria-label="見本タブ">
+              <div className={`comp-tabs is-${tabVariant}`} role="tablist" aria-label="見本タブ">
                 {[
                   { id: 'warehouse', label: 'マイデッキ (6)' },
                   { id: 'editor', label: 'デッキ編集' },
@@ -113,30 +141,89 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
             </div>
 
             <div className="comp-card">
-              <h4>入力フォーム &amp; コントロール</h4>
+              <h4>50桁デッキIDバー &amp; 文字数制限入力</h4>
               <div className="comp-form-stack">
-                <div className="comp-input-row">
+                <div className="deck-id-bar">
                   <input
                     type="text"
-                    className="ui-input"
-                    defaultValue="A3f9K2mQx8Lp4Z1nW7vB"
-                    placeholder="デッキIDを入力..."
-                    aria-label="デッキID見本"
+                    className="deck-id-input num-tabular"
+                    value={deckIdSample}
+                    onChange={(e) => setDeckIdSample(e.target.value)}
+                    placeholder="50桁デッキIDをペースト..."
+                    aria-label="50桁デッキID見本"
                   />
+                  {deckIdSample && (
+                    <button
+                      type="button"
+                      className="dc-icon-btn"
+                      title="クリア"
+                      onClick={() => setDeckIdSample('')}
+                    >
+                      <img src={assetPath('/images/icons/close.svg')} alt="クリア" className="ui-icon" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="dc-icon-btn"
+                    title="貼り付け"
+                    onClick={() => setDeckIdSample(DEMO_50_ID)}
+                  >
+                    <img src={assetPath('/images/icons/paste.svg')} alt="貼り付け" className="ui-icon" />
+                  </button>
                   <button type="button" className="ui-btn is-primary">
                     読込
                   </button>
                 </div>
 
+                <label className="comp-field-label">
+                  <div className="comp-field-meta">
+                    <span>デッキ名</span>
+                    <small className="num-tabular">{deckNameSample.length} / 12</small>
+                  </div>
+                  <input
+                    type="text"
+                    className="ui-input"
+                    maxLength={12}
+                    value={deckNameSample}
+                    onChange={(e) => setDeckNameSample(e.target.value)}
+                  />
+                </label>
+
+                <label className="comp-field-label">
+                  <div className="comp-field-meta">
+                    <span>コメント</span>
+                    <small className="num-tabular">{commentSample.length} / 40</small>
+                  </div>
+                  <input
+                    type="text"
+                    className="ui-input"
+                    maxLength={40}
+                    value={commentSample}
+                    onChange={(e) => setCommentSample(e.target.value)}
+                  />
+                </label>
+              </div>
+            </div>
+
+            <div className="comp-card">
+              <h4>実用コントロール &amp; 通知・モーダル</h4>
+              <div className="comp-form-stack">
                 <div className="comp-input-row">
                   <select className="ui-select" defaultValue="2" aria-label="グループ選択見本">
-                    <option value="1">基本デッキ</option>
-                    <option value="2">カップ戦専用</option>
-                    <option value="3">シーズン専用</option>
+                    <option value="1">基本デッキ (200固定)</option>
+                    <option value="2">カップ戦専用 (印/個別変動)</option>
+                    <option value="6">闘技場専用A (最大320)</option>
                   </select>
+                </div>
+
+                <div className="comp-checks-row">
                   <label className="comp-check">
                     <input type="checkbox" defaultChecked />
-                    <span>リーダー変更モード</span>
+                    <span>補正後コストで並び替え</span>
+                  </label>
+                  <label className="comp-check">
+                    <input type="checkbox" defaultChecked />
+                    <span>空き枠を後ろへ自動整頓</span>
                   </label>
                 </div>
 
@@ -145,37 +232,32 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
                   <input
                     type="range"
                     min="150"
-                    max="220"
+                    max="320"
                     step="5"
                     value={rangeVal}
                     onChange={(e) => setRangeVal(Number(e.target.value))}
                   />
                   <output className="num-tabular">{rangeVal}</output>
                 </label>
-              </div>
-            </div>
 
-            <div className="comp-card">
-              <h4>通知・警告・モーダル</h4>
-              <div className="comp-alerts">
-                <div className="ui-alert is-info">
-                  デッキIDを解析し、16体のステータスを計算しました。
+                <div className="comp-alerts">
+                  <div className="ui-alert is-info">
+                    50桁IDを解析し、16体のステータスを計算しました。
+                  </div>
+                  <div className="ui-alert is-danger">
+                    コストが上限（180）を 4 超過しています。
+                  </div>
                 </div>
-                <div className="ui-alert is-warning">
-                  注意：不完全なデッキIDはゲーム内で読み込めない場合があります。
+
+                <div className="comp-row">
+                  <button
+                    type="button"
+                    className="ui-btn is-secondary"
+                    onClick={() => sampleDialogRef.current?.showModal()}
+                  >
+                    サンプルモーダルを開く (&lt;dialog&gt;)
+                  </button>
                 </div>
-                <div className="ui-alert is-danger">
-                  コストが上限（180）を 4 超過しています。
-                </div>
-              </div>
-              <div className="comp-row">
-                <button
-                  type="button"
-                  className="ui-btn is-secondary"
-                  onClick={() => sampleDialogRef.current?.showModal()}
-                >
-                  サンプルモーダルを開く (&lt;dialog&gt;)
-                </button>
               </div>
             </div>
           </div>
@@ -189,7 +271,7 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
         aria-labelledby="sample-dialog-title"
       >
         <div className="dialog-header">
-          <h3 id="sample-dialog-title">デッキ仕様ダイアログ（&lt;dialog&gt; サンプル）</h3>
+          <h3 id="sample-dialog-title">デッキIDの仕様について（&lt;dialog&gt; サンプル）</h3>
           <form method="dialog">
             <button type="submit" value="close" className="ctrl-btn" aria-label="閉じる">
               ✕
@@ -198,7 +280,7 @@ export default function ComponentsSection({ version, themeMode, viewportWidth })
         </div>
         <div className="dialog-body">
           <p>
-            ネイティブ <code>&lt;dialog&gt;</code> 要素 + <code>showModal()</code> で構築されたモーダル例です。背景スクロール連鎖防止（<code>overscroll-behavior: contain</code>）や Esc / 外側クリック閉じに対応しています。
+            OTELLIAでは16体未満の仮組デッキでもID発行・保存が可能ですが、ゲーム内（逆転オセロニア）で読み込む際は16枠すべて埋まっている必要があります。
           </p>
         </div>
         <div className="dialog-footer">

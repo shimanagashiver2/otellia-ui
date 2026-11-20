@@ -124,15 +124,26 @@ export default function MatrixLabSection({
           <h4 className="editor-subhead">ブロック形状・左上空白表示</h4>
           <div className="shape-sliders">
             <label className="slider-row">
-              <span>マスサイズ</span>
+              <span>ラボ拡大サイズ</span>
+              <input
+                type="range"
+                min="12"
+                max="26"
+                value={matrix.cellSize ?? 20}
+                onChange={(e) => onUpdateMatrixConfig('cellSize', Number(e.target.value))}
+              />
+              <output className="num-tabular">{matrix.cellSize ?? 20}px</output>
+            </label>
+            <label className="slider-row">
+              <span>カード内サイズ</span>
               <input
                 type="range"
                 min="8"
-                max="20"
-                value={matrix.cellSize ?? 13}
-                onChange={(e) => onUpdateMatrixConfig('cellSize', Number(e.target.value))}
+                max="15"
+                value={matrix.cardCellSize ?? 11}
+                onChange={(e) => onUpdateMatrixConfig('cardCellSize', Number(e.target.value))}
               />
-              <output className="num-tabular">{matrix.cellSize ?? 13}px</output>
+              <output className="num-tabular">{matrix.cardCellSize ?? 11}px</output>
             </label>
             <label className="slider-row">
               <span>マス間隔</span>
@@ -248,7 +259,8 @@ export default function MatrixLabSection({
                       <div key={deck.id} className="matrix-deck-sample-item">
                         <SubPieceMatrix
                           subs={deck.subs}
-                          leaderMarker={matrix.leaderMarker || 'blank'}
+                          leaderMarker={matrix.leaderMarker || 'dot'}
+                          variant="lab"
                         />
                         <div className="matrix-sample-meta">
                           <strong>{deck.name}</strong>

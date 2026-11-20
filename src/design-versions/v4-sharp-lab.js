@@ -1,0 +1,76 @@
+import { createDefaultExtensions } from './defaults';
+
+const ext = createDefaultExtensions();
+
+const v4SharpLab = {
+  id: 'v4-sharp-lab',
+  name: 'v4: Sharp Lab（ユーザー調整ベース）',
+  description:
+    'ユーザー調整済みの配色・全11グループグラデ・角丸0pxシャープ基調・小型4×4を組み込んだ新標準案。',
+  builtin: true,
+  cardPattern: 'game-band',
+  groupApplyMode: 'title-band',
+  shape: {
+    cardRadius: 0,
+    innerRadius: 0,
+    badgeRadius: 0,
+    borderWidth: 1,
+    blur: 4,
+    bgPattern: 'none',
+  },
+  themes: {
+    light: {
+      bg: '#e8edf5',
+      bgPatternColor: 'rgba(15, 23, 42, 0.045)',
+      surface1: '#ffffff',
+      surface2: '#f3f6fb',
+      surfaceSubtle: '#eaf0f8',
+      headerBg: 'rgba(255, 255, 255, 0.92)',
+      border: '#cfd8e6',
+      borderStrong: '#94a3b8',
+      text: '#0f172a',
+      textMuted: '#475569',
+      textFaint: '#64748b',
+      accent: '#0284c7',
+      accentText: '#ffffff',
+      accentSoft: 'rgba(2, 132, 199, 0.10)',
+      shadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
+      glow: 'none',
+      danger: '#dc2626',
+      warning: '#d97706',
+      success: '#059669',
+    },
+    dark: {
+      bg: '#161a22',
+      bgPatternColor: 'rgba(148, 163, 184, 0.055)',
+      surface1: '#1e2430',
+      surface2: '#252c3b',
+      surfaceSubtle: '#1a202b',
+      headerBg: 'rgba(22, 26, 34, 0.92)',
+      border: '#2f3849',
+      borderStrong: '#475569',
+      text: '#e2e8f0',
+      textMuted: '#94a3b8',
+      textFaint: '#64748b',
+      accent: '#22d3ee',
+      accentText: '#082f49',
+      accentSoft: 'rgba(34, 211, 238, 0.12)',
+      shadow: '0 4px 14px rgba(0, 0, 0, 0.28)',
+      glow: 'none',
+      danger: '#f87171',
+      warning: '#fbbf24',
+      success: '#34d399',
+    },
+  },
+  ...ext,
+  matrix: {
+    cellSize: 20,
+    cardCellSize: 11,
+    gap: 2,
+    borderWidth: 3,
+    radius: 0,
+    leaderMarker: 'dot',
+  },
+};
+
+export default v4SharpLab;

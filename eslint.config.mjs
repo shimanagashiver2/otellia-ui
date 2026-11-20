@@ -7,6 +7,7 @@ const eslintConfig = defineConfig([
     rules: {
       "react-hooks/set-state-in-effect": "warn",
       "@next/next/no-img-element": "off",
+      "@next/next/no-page-custom-font": "off",
     },
   },
   globalIgnores([

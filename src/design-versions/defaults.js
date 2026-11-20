@@ -1,6 +1,6 @@
 export const DEFAULT_ATTRIBUTES = {
   light: {
-    god: '#eab308',
+    god: '#ffd414',
     devil: '#9333ea',
     dragon: '#dc2626',
     neutral: '#2563eb',
@@ -15,31 +15,31 @@ export const DEFAULT_ATTRIBUTES = {
 
 export const DEFAULT_RARITY_BORDERS = {
   light: {
-    S: '#0f172a',
-    A: '#0284c7',
-    B: '#16a34a',
-    C: '#94a3b8',
-    empty: '#cbd5e1',
+    S: '#71c7c1',
+    A: '#ffbb00',
+    B: '#b3b3b3',
+    C: '#e89776',
+    empty: '#000000',
   },
   dark: {
-    S: '#f8fafc',
-    A: '#38bdf8',
-    B: '#4ade80',
-    C: '#64748b',
-    empty: '#334155',
+    S: '#49f5f2',
+    A: '#faf693',
+    B: '#dedede',
+    C: '#d69a63',
+    empty: '#ffffff',
   },
 };
 
 export const RARITY_BORDER_PRESETS = {
+  user: {
+    label: 'ユーザー調整（現行標準）',
+    light: { S: '#71c7c1', A: '#ffbb00', B: '#b3b3b3', C: '#e89776', empty: '#000000' },
+    dark: { S: '#49f5f2', A: '#faf693', B: '#dedede', C: '#d69a63', empty: '#ffffff' },
+  },
   contrast: {
-    label: '高コントラスト（識別重視）',
+    label: '高コントラスト（黒白軸）',
     light: { S: '#0f172a', A: '#0284c7', B: '#16a34a', C: '#94a3b8', empty: '#cbd5e1' },
     dark: { S: '#f8fafc', A: '#38bdf8', B: '#4ade80', C: '#64748b', empty: '#334155' },
-  },
-  tier: {
-    label: '金属ランク風（白金/銀/翠/灰）',
-    light: { S: '#1e1b4b', A: '#64748b', B: '#0d9488', C: '#cbd5e1', empty: '#e2e8f0' },
-    dark: { S: '#fef08a', A: '#cbd5e1', B: '#2dd4bf', C: '#475569', empty: '#334155' },
   },
   mono: {
     label: '線明度差のみ（極小ノイズ）',
@@ -49,24 +49,36 @@ export const RARITY_BORDER_PRESETS = {
 };
 
 export const DEFAULT_MATRIX_CONFIG = {
-  cellSize: 13,
-  gap: 3,
+  cellSize: 20,
+  cardCellSize: 11,
+  gap: 2,
   borderWidth: 2,
-  radius: 3,
-  leaderMarker: 'blank', // 'blank' | 'dot' | 'L'
+  radius: 0,
+  leaderMarker: 'dot', // 'blank' | 'dot' | 'L'
+};
+
+export const DEFAULT_FONTS = {
+  ui: 'ibm-plex-sans-jp',
+  mono: 'ibm-plex-mono',
+};
+
+export const DEFAULT_CARD_MIXER = {
+  visualLayout: 'stacked', // 'stacked' | 'inline'
+  showMetaLine: true,
+  commentSize: 11,
 };
 
 export const DEFAULT_GROUP_GRADIENTS = {
-  '0': { start: '#64748b', mid: '#94a3b8', useMid: false, end: '#475569', angle: 135, textColor: 'auto' },
-  '1': { start: '#0ea5e9', mid: '#38bdf8', useMid: false, end: '#2563eb', angle: 135, textColor: 'auto' },
-  '2': { start: '#f59e0b', mid: '#fb7185', useMid: true, end: '#db2777', angle: 135, textColor: 'auto' },
-  '3': { start: '#06b6d4', mid: '#3b82f6', useMid: false, end: '#4f46e5', angle: 135, textColor: 'auto' },
+  '0': { start: '#1fb0b5', mid: '#63b68c', useMid: false, end: '#a9bd62', angle: 135, textColor: '#f8fafc' },
+  '1': { start: '#c92812', mid: '#c92812', useMid: true, end: '#e6b55c', angle: 135, textColor: 'auto' },
+  '2': { start: '#f59e0b', mid: '#f59e0b', useMid: true, end: '#ffd900', angle: 135, textColor: '#f8fafc' },
+  '3': { start: '#005a91', mid: '#005a91', useMid: true, end: '#e6dc5e', angle: 135, textColor: '#f8fafc' },
   '4': { start: '#475569', mid: '#64748b', useMid: false, end: '#334155', angle: 135, textColor: 'auto' },
-  '5': { start: '#e2e8f0', mid: '#94a3b8', useMid: false, end: '#64748b', angle: 135, textColor: 'auto' },
-  '6': { start: '#ef4444', mid: '#f97316', useMid: false, end: '#b91c1c', angle: 135, textColor: 'auto' },
-  '7': { start: '#8b5cf6', mid: '#a855f7', useMid: false, end: '#6d28d9', angle: 135, textColor: 'auto' },
-  '8': { start: '#10b981', mid: '#14b8a6', useMid: false, end: '#0f766e', angle: 135, textColor: 'auto' },
-  '9': { start: '#eab308', mid: '#f59e0b', useMid: false, end: '#b45309', angle: 135, textColor: 'auto' },
+  '5': { start: '#64748b', mid: '#64748b', useMid: true, end: '#abc4c4', angle: 135, textColor: '#f8fafc' },
+  '6': { start: '#bf1369', mid: '#bf1369', useMid: true, end: '#ffa3b2', angle: 135, textColor: 'auto' },
+  '7': { start: '#bf1369', mid: '#bf1369', useMid: true, end: '#b3b6ff', angle: 135, textColor: 'auto' },
+  '8': { start: '#bf1369', mid: '#bf1369', useMid: true, end: '#adffb4', angle: 135, textColor: '#f8fafc' },
+  '9': { start: '#3b3b3b', mid: '#525252', useMid: true, end: '#858585', angle: 135, textColor: 'auto' },
   a: { start: '#ec4899', mid: '#a855f7', useMid: true, end: '#6366f1', angle: 135, textColor: 'auto' },
 };
 
@@ -76,5 +88,7 @@ export function createDefaultExtensions() {
     rarityBorders: structuredClone(DEFAULT_RARITY_BORDERS),
     matrix: { ...DEFAULT_MATRIX_CONFIG },
     groupGradients: structuredClone(DEFAULT_GROUP_GRADIENTS),
+    fonts: { ...DEFAULT_FONTS },
+    cardMixer: { ...DEFAULT_CARD_MIXER },
   };
 }

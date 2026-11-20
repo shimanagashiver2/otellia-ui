@@ -5,7 +5,7 @@ const v2LabPrecision = {
   name: 'v2: Lab Precision（精密計器・高コントラスト）',
   description: '角丸を締め、背景とカードの明暗差・境界線をはっきりさせた分析端末・計器寄り案。',
   builtin: true,
-  cardPattern: 'hairline',
+  cardPattern: 'side-action',
   groupApplyMode: 'top-bar',
   shape: {
     cardRadius: 8,

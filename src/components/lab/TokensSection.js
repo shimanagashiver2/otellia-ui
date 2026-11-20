@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { MONO_FONT_OPTIONS, UI_FONT_OPTIONS } from '@/design-versions/fonts';
 import PreviewSplitWrapper from './PreviewSplitWrapper';
 
 function toPickerHex(value, fallback = '#ffffff') {
@@ -39,19 +40,25 @@ export default function TokensSection({
   viewportWidth,
   onUpdateThemeColor,
   onUpdateShape,
+  onResetAllRadiusZero,
+  onChangeUiFont,
+  onChangeMonoFont,
 }) {
   const [editMode, setEditMode] = useState('light');
+  const [fontTab, setFontTab] = useState('mono');
   const activeColors = version.themes?.[editMode] || version.themes.light;
   const shape = version.shape || {};
+  const activeUiFont = version.fonts?.ui || 'ibm-plex-sans-jp';
+  const activeMonoFont = version.fonts?.mono || 'ibm-plex-mono';
 
   return (
     <section className="lab-section" id="tokens">
       <div className="lab-section-head">
         <div>
-          <span className="lab-kicker">SECTION 01 // FOUNDATION TOKENS</span>
-          <h2 className="lab-section-title">背景・サーフェス階層・タイポグラフィ</h2>
+          <span className="lab-kicker">SECTION 01 // FOUNDATION TOKENS &amp; FONTS</span>
+          <h2 className="lab-section-title">背景・角丸統一・フォント比較ラボ</h2>
           <p className="lab-section-desc">
-            OTELLIAのベース色温度を保ちつつ、面（Surface）と1px罫線のバランスや角丸・ぼかし量をリアルタイムで検証します。
+            外枠・内側・ボタン/チップの角丸をトークンで一括制御し、日本語フォント8種・等幅/数字フォント16種を実データ表記で一発比較・採用できます。
           </p>
         </div>
       </div>
@@ -104,7 +111,18 @@ export default function TokensSection({
 
           <div className="editor-divider" />
 
-          <h3 className="editor-subhead">形状・質感パラメータ</h3>
+          <div className="editor-subhead-row">
+            <h3 className="editor-subhead">形状・角丸パラメータ</h3>
+            <button
+              type="button"
+              className="ctrl-btn is-xs"
+              onClick={onResetAllRadiusZero}
+              title="カード・内側・ボタン/チップの角丸を一括で0pxにする"
+            >
+              角丸すべて 0px
+            </button>
+          </div>
+
           <div className="shape-sliders">
             <label className="slider-row">
               <span>カード角丸</span>
@@ -112,10 +130,10 @@ export default function TokensSection({
                 type="range"
                 min="0"
                 max="24"
-                value={shape.cardRadius ?? 12}
+                value={shape.cardRadius ?? 0}
                 onChange={(e) => onUpdateShape('cardRadius', Number(e.target.value))}
               />
-              <output className="num-tabular">{shape.cardRadius ?? 12}px</output>
+              <output className="num-tabular">{shape.cardRadius ?? 0}px</output>
             </label>
             <label className="slider-row">
               <span>内側角丸</span>
@@ -123,10 +141,21 @@ export default function TokensSection({
                 type="range"
                 min="0"
                 max="16"
-                value={shape.innerRadius ?? 8}
+                value={shape.innerRadius ?? 0}
                 onChange={(e) => onUpdateShape('innerRadius', Number(e.target.value))}
               />
-              <output className="num-tabular">{shape.innerRadius ?? 8}px</output>
+              <output className="num-tabular">{shape.innerRadius ?? 0}px</output>
+            </label>
+            <label className="slider-row">
+              <span>部品角丸</span>
+              <input
+                type="range"
+                min="0"
+                max="16"
+                value={shape.badgeRadius ?? 0}
+                onChange={(e) => onUpdateShape('badgeRadius', Number(e.target.value))}
+              />
+              <output className="num-tabular">{shape.badgeRadius ?? 0}px</output>
             </label>
             <label className="slider-row">
               <span>枠線太さ</span>
@@ -145,10 +174,10 @@ export default function TokensSection({
                 type="range"
                 min="0"
                 max="18"
-                value={shape.blur ?? 0}
+                value={shape.blur ?? 4}
                 onChange={(e) => onUpdateShape('blur', Number(e.target.value))}
               />
-              <output className="num-tabular">{shape.blur ?? 0}px</output>
+              <output className="num-tabular">{shape.blur ?? 4}px</output>
             </label>
           </div>
         </div>
@@ -173,31 +202,102 @@ export default function TokensSection({
                 </div>
 
                 <div className="specimen-typo-card">
-                  <div className="typo-row">
-                    <span className="typo-meta">DISPLAY // OTELLIA FONT</span>
-                    <div className="typo-otellia">OTELLIA LAB 01</div>
-                  </div>
-                  <div className="typo-row">
-                    <span className="typo-meta">HEADING &amp; BODY</span>
-                    <h4 className="typo-h4">逆転オセロニア 研究解析コンソール</h4>
-                    <p className="typo-body">
-                      装飾を極力抑えた研究機関ベースの面階層に、属性色とグループグラデーションだけをデータ信号として乗せる設計です。
-                    </p>
-                  </div>
-                  <div className="typo-row">
-                    <span className="typo-meta">TABULAR NUMBERS (等幅数値)</span>
-                    <div className="typo-nums num-tabular">
-                      <span>HP 28,450</span>
-                      <span>ATK 17,920</span>
-                      <span>COST 200 / 200</span>
+                  <div className="font-compare-head">
+                    <div>
+                      <span className="typo-meta">FONT COMPARISON MATRIX</span>
+                      <h4 className="typo-h4">フォント一覧比較（クリックで即適用）</h4>
+                    </div>
+                    <div className="ctrl-segmented">
+                      <button
+                        type="button"
+                        className={fontTab === 'mono' ? 'is-active' : ''}
+                        onClick={() => setFontTab('mono')}
+                      >
+                        等幅・数字 ({MONO_FONT_OPTIONS.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={fontTab === 'ui' ? 'is-active' : ''}
+                        onClick={() => setFontTab('ui')}
+                      >
+                        UI・日本語 ({UI_FONT_OPTIONS.length})
+                      </button>
+                      <button
+                        type="button"
+                        className={fontTab === 'otellia' ? 'is-active' : ''}
+                        onClick={() => setFontTab('otellia')}
+                      >
+                        OTELLIA固有
+                      </button>
                     </div>
                   </div>
-                  <div className="typo-status-row">
-                    <span className="status-pill is-accent">ACCENT</span>
-                    <span className="status-pill is-success">OK / 適合</span>
-                    <span className="status-pill is-warning">COST調整</span>
-                    <span className="status-pill is-danger">上限超過</span>
-                  </div>
+
+                  {fontTab === 'mono' && (
+                    <div className="font-compare-list">
+                      {MONO_FONT_OPTIONS.map((font) => {
+                        const isSelected = activeMonoFont === font.id;
+                        return (
+                          <button
+                            key={font.id}
+                            type="button"
+                            className={`font-compare-row ${isSelected ? 'is-selected' : ''}`}
+                            onClick={() => onChangeMonoFont(font.id)}
+                          >
+                            <div className="font-row-meta">
+                              <span className="font-row-name">{font.label}</span>
+                              <span className="font-row-tag">{font.tag}</span>
+                              {isSelected && <span className="adopted-tag">採用中</span>}
+                            </div>
+                            <div
+                              className="font-row-sample is-mono"
+                              style={{ fontFamily: font.family }}
+                            >
+                              <span>COST 200</span>
+                              <span>HP 29113</span>
+                              <span>ATK 18847</span>
+                              <span className="sample-digits">0123456789</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {fontTab === 'ui' && (
+                    <div className="font-compare-list">
+                      {UI_FONT_OPTIONS.map((font) => {
+                        const isSelected = activeUiFont === font.id;
+                        return (
+                          <button
+                            key={font.id}
+                            type="button"
+                            className={`font-compare-row ${isSelected ? 'is-selected' : ''}`}
+                            onClick={() => onChangeUiFont(font.id)}
+                          >
+                            <div className="font-row-meta">
+                              <span className="font-row-name">{font.label}</span>
+                              <span className="font-row-tag">{font.tag}</span>
+                              {isSelected && <span className="adopted-tag">採用中</span>}
+                            </div>
+                            <div
+                              className="font-row-sample is-ui"
+                              style={{ fontFamily: font.family }}
+                            >
+                              <strong>混合：マナデッキ / 基本デッキ・シーズン専用</strong>
+                              <span>オーラ２枚と回復連打で耐久。先攻は辺置きでＨＰ維持し、終盤ゼウスコンボで詰め切る</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {fontTab === 'otellia' && (
+                    <div className="typo-row">
+                      <span className="typo-meta">DISPLAY // OTELLIA FONT</span>
+                      <div className="typo-otellia">OTELLIA LAB 01 / 逆転オセロニア</div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

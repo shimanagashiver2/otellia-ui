@@ -5,8 +5,8 @@ const v1LabSlate = {
   name: 'v1: Lab Slate（研究機関・標準）',
   description: 'OTELLIAの淡青灰×スレート色を継承し、ぼかし・発光を廃して1px罫線と計器階層で整えた標準案。',
   builtin: true,
-  cardPattern: 'instrument',
-  groupApplyMode: 'left-bar',
+  cardPattern: 'datasheet',
+  groupApplyMode: 'title-band',
   shape: {
     cardRadius: 12,
     innerRadius: 8,

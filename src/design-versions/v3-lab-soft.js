@@ -5,7 +5,7 @@ const v3LabSoft = {
   name: 'v3: Lab Soft（ソフト研究所・面階層）',
   description: '現行OTELLIAの柔らかな丸みと微透明感を活かしつつ、入れ子枠や強すぎる発光だけ抜いたソフト案。',
   builtin: true,
-  cardPattern: 'tonal',
+  cardPattern: 'lab-ledger',
   groupApplyMode: 'tinted',
   shape: {
     cardRadius: 16,

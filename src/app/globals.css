@@ -1,7 +1,7 @@
 :root {
   color-scheme: light dark;
-  --font-ui: var(--font-sans), 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
-  --font-num: var(--font-mono), ui-monospace, 'SFMono-Regular', monospace;
+  --font-ui: 'IBM Plex Sans JP', 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+  --font-num: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
 
   /* JS未実行時フォールバック用のデフォルトトークン */
   --lab-bg: light-dark(#e8edf5, #161a22);
@@ -25,11 +25,11 @@
   --lab-warning: light-dark(#d97706, #fbbf24);
   --lab-success: light-dark(#059669, #34d399);
 
-  --lab-card-radius: 12px;
-  --lab-inner-radius: 8px;
-  --lab-badge-radius: 6px;
+  --lab-card-radius: 0px;
+  --lab-inner-radius: 0px;
+  --lab-badge-radius: 0px;
   --lab-border-width: 1px;
-  --lab-blur: 0px;
+  --lab-blur: 4px;
 
   &:has(> head > meta[name="color-scheme"][content="dark"]) {
     color-scheme: dark;
@@ -60,6 +60,7 @@ body {
 /* Lab全体の表面ルート */
 .lab-root {
   min-height: 100vh;
+  font-family: var(--font-ui);
   background-color: var(--lab-bg);
   background-image: var(--lab-bg-image);
   background-size: var(--lab-bg-size);
@@ -71,6 +72,7 @@ body {
 /* ライト/ダーク同時比較用の独立テーマスコープ（背景・文字色・accent-colorを必ず再定義） */
 .theme-scope-light {
   color-scheme: only light;
+  font-family: var(--font-ui);
   background-color: var(--lab-bg);
   background-image: var(--lab-bg-image);
   background-size: var(--lab-bg-size);
@@ -80,6 +82,7 @@ body {
 
 .theme-scope-dark {
   color-scheme: only dark;
+  font-family: var(--font-ui);
   background-color: var(--lab-bg);
   background-image: var(--lab-bg-image);
   background-size: var(--lab-bg-size);

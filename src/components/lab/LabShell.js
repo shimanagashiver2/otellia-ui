@@ -55,7 +55,6 @@ export default function LabShell() {
     themeMode === 'dark' ? true : themeMode === 'light' ? false : systemDark;
   const effectiveMode = effectiveDark ? 'dark' : 'light';
 
-  // DOM 側の <meta name="color-scheme"> と html.dark-mode を同期
   useEffect(() => {
     const meta = document.querySelector('meta[name="color-scheme"]');
     if (meta) {
@@ -177,7 +176,8 @@ export default function LabShell() {
           <div className="lab-hero-meta num-tabular">
             <span>PATTERN: {activeVersion.cardPattern}</span>
             <span>GROUP: {activeVersion.groupApplyMode}</span>
-            <span>MODE: {themeMode.toUpperCase()}</span>
+            <span>UI: {activeVersion.fonts?.ui || 'ibm-plex-sans-jp'}</span>
+            <span>NUM: {activeVersion.fonts?.mono || 'ibm-plex-mono'}</span>
           </div>
         </div>
 
@@ -193,6 +193,18 @@ export default function LabShell() {
             mutateActiveVersion((v) => ({
               ...v,
               shape: { ...v.shape, bgPattern: pattern },
+            }))
+          }
+          onChangeUiFont={(fontId) =>
+            mutateActiveVersion((v) => ({
+              ...v,
+              fonts: { ...v.fonts, ui: fontId },
+            }))
+          }
+          onChangeMonoFont={(fontId) =>
+            mutateActiveVersion((v) => ({
+              ...v,
+              fonts: { ...v.fonts, mono: fontId },
             }))
           }
           themeMode={themeMode}
@@ -228,6 +240,24 @@ export default function LabShell() {
                 shape: { ...v.shape, [key]: val },
               }))
             }
+            onResetAllRadiusZero={() =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                shape: { ...v.shape, cardRadius: 0, innerRadius: 0, badgeRadius: 0 },
+              }))
+            }
+            onChangeUiFont={(fontId) =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                fonts: { ...v.fonts, ui: fontId },
+              }))
+            }
+            onChangeMonoFont={(fontId) =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                fonts: { ...v.fonts, mono: fontId },
+              }))
+            }
           />
         )}
 
@@ -238,6 +268,21 @@ export default function LabShell() {
             viewportWidth={labState.viewportWidth}
             onSelectCardPattern={(pat) =>
               mutateActiveVersion((v) => ({ ...v, cardPattern: pat }))
+            }
+            onChangeGroupApplyMode={(mode) =>
+              mutateActiveVersion((v) => ({ ...v, groupApplyMode: mode }))
+            }
+            onUpdateMatrixConfig={(key, val) =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                matrix: { ...v.matrix, [key]: val },
+              }))
+            }
+            onUpdateCardMixer={(key, val) =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                cardMixer: { ...v.cardMixer, [key]: val },
+              }))
             }
           />
         )}

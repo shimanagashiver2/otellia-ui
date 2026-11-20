@@ -4,15 +4,15 @@ import { getRarityBucket, getSampleChar, getSealLabel, ATTR_LABELS } from '@/dat
 
 export default function SubPieceMatrix({
   subs = [],
-  leaderMarker = 'blank',
-  compact = false,
+  leaderMarker = 'dot',
+  variant = 'card', // 'card' | 'lab'
 }) {
   // 4x4 = 16セル。左上(0番)はブロックなし、1..15がサブ15体
   const cells = [null, ...Array.from({ length: 15 }, (_, idx) => subs[idx] ?? null)];
 
   return (
     <div
-      className={`sub-matrix ${compact ? 'is-compact' : ''}`}
+      className={`sub-matrix ${variant === 'card' ? 'is-card-size' : 'is-lab-size'}`}
       role="img"
       aria-label="サブ駒15体マトリクス（左上はリーダー分の空き枠）"
     >

@@ -1,14 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { MONO_FONT_OPTIONS, UI_FONT_OPTIONS } from '@/design-versions/fonts';
 
 export const LAB_SECTIONS = [
   { id: 'all', label: 'すべて' },
-  { id: 'tokens', label: '1. 背景・カード・文字' },
-  { id: 'nested', label: '2. 入れ子脱却比較' },
+  { id: 'tokens', label: '1. 背景・角丸・フォント' },
+  { id: 'nested', label: '2. 入れ子脱却 & ミキサー' },
   { id: 'matrix', label: '3. 4×4ブロック色' },
   { id: 'gradients', label: '4. グループグラデ' },
-  { id: 'deck-preview', label: '5. 実戦モック' },
+  { id: 'deck-preview', label: '5. グループ表 & 実戦モック' },
   { id: 'components', label: '6. 共通UIパーツ' },
 ];
 
@@ -21,6 +22,8 @@ export default function LabControlBar({
   onDeleteVersion,
   onResetVersion,
   onChangeBgPattern,
+  onChangeUiFont,
+  onChangeMonoFont,
   themeMode,
   onChangeThemeMode,
   viewportWidth,
@@ -178,6 +181,40 @@ export default function LabControlBar({
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="lab-control-group is-fonts">
+          <label htmlFor="ctrl-ui-font" className="ctrl-label">
+            UI FONT
+          </label>
+          <select
+            id="ctrl-ui-font"
+            className="ctrl-select"
+            value={activeVersion.fonts?.ui || 'ibm-plex-sans-jp'}
+            onChange={(e) => onChangeUiFont(e.target.value)}
+          >
+            {UI_FONT_OPTIONS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </select>
+
+          <label htmlFor="ctrl-mono-font" className="ctrl-label">
+            NUM FONT
+          </label>
+          <select
+            id="ctrl-mono-font"
+            className="ctrl-select"
+            value={activeVersion.fonts?.mono || 'ibm-plex-mono'}
+            onChange={(e) => onChangeMonoFont(e.target.value)}
+          >
+            {MONO_FONT_OPTIONS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="lab-control-group is-right">

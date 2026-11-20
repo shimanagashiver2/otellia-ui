@@ -9,6 +9,7 @@ import {
 
 const COLOR_SCHEME_KEY = 'otellia-ui-color-scheme';
 const THEME_MODE_KEY = 'otellia-ui-theme-mode';
+const GROUP_NOTES_KEY = 'otellia-ui-group-notes-v1';
 
 const SERVER_LAB_SNAPSHOT = getInitialLabState();
 let clientLabCache = null;
@@ -25,18 +26,24 @@ function parseStoredLabState() {
       .filter((v) => v && typeof v === 'object')
       .map((v) => normalizeVersion(v, BUILTIN_VERSION_MAP[v.id]));
 
-    // ビルトイン4案が欠けていたら補完
     const existingIds = new Set(normalized.map((v) => v.id));
-    for (const builtin of createInitialVersions()) {
-      if (!existingIds.has(builtin.id)) normalized.push(builtin);
-    }
+    const hadV4 = existingIds.has(DEFAULT_ACTIVE_VERSION_ID);
 
-    const activeId = normalized.some((v) => v.id === parsed.activeVersionId)
+    // 新規追加されたビルトイン案（例: v4-sharp-lab）を先頭補完
+    const missingBuiltins = createInitialVersions().filter(
+      (b) => !existingIds.has(b.id)
+    );
+    const mergedVersions = [...missingBuiltins, ...normalized];
+
+    // 初回v4導入時のみ v4-sharp-lab をアクティブ化してすぐ確認できるようにする
+    const activeId = !hadV4
+      ? DEFAULT_ACTIVE_VERSION_ID
+      : mergedVersions.some((v) => v.id === parsed.activeVersionId)
       ? parsed.activeVersionId
       : DEFAULT_ACTIVE_VERSION_ID;
 
     return {
-      versions: normalized,
+      versions: mergedVersions,
       activeVersionId: activeId,
       viewportWidth: parsed.viewportWidth || 'full',
       activeSection: parsed.activeSection || 'all',
@@ -87,6 +94,48 @@ export function updateLabState(updater) {
     } catch {}
   }
   labListeners.forEach((fn) => fn());
+}
+
+// --- グループ仕様テーブルのカスタムメモ永続化 ---
+const SERVER_NOTES = {};
+let clientNotesCache = null;
+const notesListeners = new Set();
+
+function readNotes() {
+  if (typeof window === 'undefined') return SERVER_NOTES;
+  try {
+    const raw = window.localStorage.getItem(GROUP_NOTES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function getGroupNotesSnapshot() {
+  if (typeof window === 'undefined') return SERVER_NOTES;
+  if (!clientNotesCache) clientNotesCache = readNotes();
+  return clientNotesCache;
+}
+
+export function getGroupNotesServerSnapshot() {
+  return SERVER_NOTES;
+}
+
+export function subscribeGroupNotes(listener) {
+  notesListeners.add(listener);
+  return () => notesListeners.delete(listener);
+}
+
+export function updateGroupNote(groupKey, note) {
+  const prev = getGroupNotesSnapshot();
+  const next = { ...prev, [groupKey]: note };
+  clientNotesCache = next;
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(GROUP_NOTES_KEY, JSON.stringify(next));
+    } catch {}
+  }
+  notesListeners.forEach((fn) => fn());
 }
 
 // --- テーマモード (system | light | dark | split) ---

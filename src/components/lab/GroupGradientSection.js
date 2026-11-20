@@ -7,9 +7,9 @@ import DeckCardVariant from './DeckCardVariant';
 import PreviewSplitWrapper from './PreviewSplitWrapper';
 
 const APPLY_MODES = [
+  { id: 'title-band', label: 'タイトル帯' },
   { id: 'left-bar', label: '左端カラー帯' },
   { id: 'top-bar', label: '上端ライン帯' },
-  { id: 'badge-only', label: 'バッジのみ' },
   { id: 'tinted', label: '左帯＋極薄ティント' },
 ];
 
@@ -274,7 +274,8 @@ export default function GroupGradientSection({
                     deck={sampleDeckForGroup}
                     pattern={version.cardPattern}
                     groupApplyMode={version.groupApplyMode}
-                    leaderMarker={version.matrix?.leaderMarker || 'blank'}
+                    leaderMarker={version.matrix?.leaderMarker || 'dot'}
+                    cardMixer={version.cardMixer}
                   />
                 </div>
 

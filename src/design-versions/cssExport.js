@@ -1,5 +1,10 @@
 import { GROUP_ITEMS } from '@/data/sampleDecks';
-import { buildGradientCss, buildTintGradientCss, resolveGroupTextColor } from '@/lib/gradient';
+import {
+  buildGradientCss,
+  buildTintGradientCss,
+  resolveGroupTextColor,
+} from '@/lib/gradient';
+import { resolveMonoFontFamily, resolveUiFontFamily } from './fonts';
 
 function resolveBgPattern(pattern, patternColor) {
   if (pattern === 'dots') {
@@ -27,9 +32,14 @@ export function versionToStyleVars(version, mode = 'light') {
   const rarity = version.rarityBorders?.[safeMode] || version.rarityBorders.light;
   const shape = version.shape || {};
   const matrix = version.matrix || {};
+  const fonts = version.fonts || {};
+  const cardMixer = version.cardMixer || {};
   const bgPattern = resolveBgPattern(shape.bgPattern, theme.bgPatternColor);
 
   const vars = {
+    '--font-ui': resolveUiFontFamily(fonts.ui),
+    '--font-num': resolveMonoFontFamily(fonts.mono),
+
     '--lab-bg': theme.bg,
     '--lab-bg-image': bgPattern.image,
     '--lab-bg-size': bgPattern.size,
@@ -51,9 +61,9 @@ export function versionToStyleVars(version, mode = 'light') {
     '--lab-warning': theme.warning,
     '--lab-success': theme.success,
 
-    '--lab-card-radius': `${Number(shape.cardRadius ?? 12)}px`,
-    '--lab-inner-radius': `${Number(shape.innerRadius ?? 8)}px`,
-    '--lab-badge-radius': `${Number(shape.badgeRadius ?? 6)}px`,
+    '--lab-card-radius': `${Number(shape.cardRadius ?? 0)}px`,
+    '--lab-inner-radius': `${Number(shape.innerRadius ?? 0)}px`,
+    '--lab-badge-radius': `${Number(shape.badgeRadius ?? 0)}px`,
     '--lab-border-width': `${Number(shape.borderWidth ?? 1)}px`,
     '--lab-blur': `${Number(shape.blur ?? 0)}px`,
 
@@ -68,10 +78,13 @@ export function versionToStyleVars(version, mode = 'light') {
     '--rarity-c': rarity.C,
     '--rarity-empty': rarity.empty,
 
-    '--matrix-cell-size': `${Number(matrix.cellSize ?? 13)}px`,
-    '--matrix-gap': `${Number(matrix.gap ?? 3)}px`,
+    '--matrix-cell-size': `${Number(matrix.cellSize ?? 20)}px`,
+    '--card-matrix-cell-size': `${Number(matrix.cardCellSize ?? 11)}px`,
+    '--matrix-gap': `${Number(matrix.gap ?? 2)}px`,
     '--matrix-border-width': `${Number(matrix.borderWidth ?? 2)}px`,
-    '--matrix-radius': `${Number(matrix.radius ?? 3)}px`,
+    '--matrix-radius': `${Number(matrix.radius ?? 0)}px`,
+
+    '--dc-comment-size': `${Number(cardMixer.commentSize ?? 11)}px`,
 
     accentColor: theme.accent,
   };
@@ -79,7 +92,10 @@ export function versionToStyleVars(version, mode = 'light') {
   for (const group of GROUP_ITEMS) {
     const grad = version.groupGradients?.[group.key];
     vars[`--group-gradient-${group.key}`] = buildGradientCss(grad);
-    vars[`--group-tint-${group.key}`] = buildTintGradientCss(grad, safeMode === 'dark' ? 0.16 : 0.11);
+    vars[`--group-tint-${group.key}`] = buildTintGradientCss(
+      grad,
+      safeMode === 'dark' ? 0.16 : 0.11
+    );
     vars[`--group-text-${group.key}`] = resolveGroupTextColor(grad);
   }
 
@@ -95,6 +111,7 @@ export function generateCssTokens(version) {
   const darkRarity = version.rarityBorders.dark;
   const shape = version.shape;
   const matrix = version.matrix;
+  const fonts = version.fonts || {};
 
   const lightPattern = resolveBgPattern(shape.bgPattern, light.bgPatternColor);
   const darkPattern = resolveBgPattern(shape.bgPattern, dark.bgPatternColor);
@@ -110,10 +127,15 @@ export function generateCssTokens(version) {
   return `/* =====================================================
  * OTELLIA UI Design Tokens — ${version.name}
  * Card Pattern: ${version.cardPattern} | Group Mode: ${version.groupApplyMode}
+ * Fonts: UI=${fonts.ui || 'ibm-plex-sans-jp'} / NUM=${fonts.mono || 'ibm-plex-mono'}
  * ===================================================== */
 
 :root {
   color-scheme: light dark;
+
+  /* フォント */
+  --font-ui: ${resolveUiFontFamily(fonts.ui)};
+  --font-num: ${resolveMonoFontFamily(fonts.mono)};
 
   /* サーフェス & テキスト（Light） */
   --bg-color: ${light.bg};
@@ -153,6 +175,7 @@ export function generateCssTokens(version) {
   --rarity-border-c: ${lightRarity.C};
   --rarity-border-empty: ${lightRarity.empty};
   --matrix-cell-size: ${matrix.cellSize}px;
+  --card-matrix-cell-size: ${matrix.cardCellSize ?? 11}px;
   --matrix-gap: ${matrix.gap}px;
   --matrix-border-width: ${matrix.borderWidth}px;
   --matrix-radius: ${matrix.radius}px;
