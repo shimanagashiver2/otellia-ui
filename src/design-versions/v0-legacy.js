@@ -13,7 +13,7 @@ const v0Legacy = {
     badgeRadius: 6,
     borderWidth: 1,
     blur: 10,
-    bgPattern: 'dots',
+    bgPattern: 'board-stars',
   },
   themes: {
     light: {

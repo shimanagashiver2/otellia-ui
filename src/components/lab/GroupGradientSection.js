@@ -55,10 +55,9 @@ export default function GroupGradientSection({
     <section className="lab-section" id="gradients">
       <div className="lab-section-head">
         <div>
-          <span className="lab-kicker">SECTION 04 // GROUP GRADIENTS</span>
-          <h2 className="lab-section-title">デッキグループ11種 グラデーションビルダー</h2>
+          <h2 className="lab-section-title">4. デッキグループ11種 グラデーション設計</h2>
           <p className="lab-section-desc">
-            基本・カップ戦・シーズン・白の塔・闘技場A/B/C・ロイヤル・グローリーなど全11グループのグラデーションとカード適用位置を設計します。
+            基本・カップ戦・シーズン・白の塔・闘技場A/B/C・ロイヤル・グローリーなど全11グループのグラデーションとカード適用位置を調整します。
           </p>
         </div>
         <div className="section-head-actions">
@@ -162,7 +161,7 @@ export default function GroupGradientSection({
           </div>
 
           <div className="gradient-mid-row">
-            <label className="checkbox-inline">
+            <label className="comp-check">
               <input
                 type="checkbox"
                 checked={Boolean(cfg.useMid)}

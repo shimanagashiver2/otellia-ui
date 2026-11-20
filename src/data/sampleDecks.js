@@ -14,6 +14,12 @@ export const GROUP_ITEMS = [
 
 export const GROUP_BY_KEY = Object.fromEntries(GROUP_ITEMS.map((item) => [item.key, item]));
 
+export const COST_VARIATION_GROUP_KEYS = new Set(['2', '4', '5', '6', '7', '8']);
+
+export function groupSupportsCostVariation(groupKey) {
+  return COST_VARIATION_GROUP_KEYS.has(String(groupKey || ''));
+}
+
 export const GROUP_RULE_SPECS = [
   {
     key: '1',

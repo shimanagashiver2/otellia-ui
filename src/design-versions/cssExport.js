@@ -1,4 +1,5 @@
 import { GROUP_ITEMS } from '@/data/sampleDecks';
+import { sanitizeHexColor } from '@/lib/colorUtils';
 import {
   buildGradientCss,
   buildTintGradientCss,
@@ -18,28 +19,12 @@ function scalePatternColor(color, strength = 1, fallbackRgb = '15, 23, 42') {
 }
 
 export function resolveBgPattern(pattern, patternColor, strength = 1, mode = 'light') {
-  const c = scalePatternColor(
-    patternColor,
-    strength,
-    mode === 'dark' ? '148, 163, 184' : '15, 23, 42'
-  );
-  const cStrong = scalePatternColor(
-    patternColor,
-    strength * 1.9,
-    mode === 'dark' ? '148, 163, 184' : '15, 23, 42'
-  );
+  const fbRgb = mode === 'dark' ? '148, 163, 184' : '15, 23, 42';
+  const c = scalePatternColor(patternColor, strength, fbRgb);
+  const cSoft = scalePatternColor(patternColor, strength * 0.65, fbRgb);
+  const cStrong = scalePatternColor(patternColor, strength * 1.9, fbRgb);
 
   switch (pattern) {
-    case 'dots':
-      return {
-        image: `radial-gradient(${cStrong} 1px, transparent 1px)`,
-        size: '20px 20px',
-      };
-    case 'grid':
-      return {
-        image: `linear-gradient(to right, ${c} 1px, transparent 1px), linear-gradient(to bottom, ${c} 1px, transparent 1px)`,
-        size: '24px 24px',
-      };
     case 'fine-grid':
       return {
         image: [
@@ -50,40 +35,61 @@ export function resolveBgPattern(pattern, patternColor, strength = 1, mode = 'li
         ].join(', '),
         size: '96px 96px, 96px 96px, 16px 16px, 16px 16px',
       };
-    case 'cross': {
-      const stroke = encodeURIComponent(cStrong);
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M14 10v8M10 14h8' stroke='${stroke}' stroke-width='1' fill='none'/></svg>`;
+    case 'board-stars': {
+      const sLine = encodeURIComponent(c);
+      const sDot = encodeURIComponent(cStrong);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'><path d='M64 0H0v64' stroke='${sLine}' stroke-width='1' fill='none'/><circle cx='32' cy='32' r='1.75' fill='${sDot}'/></svg>`;
       return {
         image: `url("data:image/svg+xml,${svg}")`,
-        size: '28px 28px',
+        size: '64px 64px',
       };
     }
-    case 'diagonal':
-      return {
-        image: `repeating-linear-gradient(-45deg, transparent 0 11px, ${c} 11px 12px)`,
-        size: 'auto',
-      };
-    case 'isometric': {
-      const stroke = encodeURIComponent(c);
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'><path d='M16 0L32 16L16 32L0 16Z' stroke='${stroke}' stroke-width='1' fill='none'/></svg>`;
+    case 'hex-mesh': {
+      const sHex = encodeURIComponent(c);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='56' height='96' viewBox='0 0 56 96'><path d='M28 0L56 16v32L28 64 0 48V16Z M28 64v32 M0 48l-28 16 M56 48l28 16 M0 16L28 0' stroke='${sHex}' stroke-width='1' fill='none'/></svg>`;
       return {
         image: `url("data:image/svg+xml,${svg}")`,
-        size: '32px 32px',
+        size: '56px 96px',
       };
     }
-    case 'noise': {
-      const opacity = Math.min(0.22, 0.055 * (Number(strength) || 1)).toFixed(3);
-      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='${opacity}'/></svg>`;
+    case 'micro-ticks': {
+      const sTick = encodeURIComponent(cStrong);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'><path d='M20 0v4M20 36v4M0 20h4M36 20h4M18.5 20h3M20 18.5v3' stroke='${sTick}' stroke-width='1' fill='none'/></svg>`;
       return {
         image: `url("data:image/svg+xml,${svg}")`,
-        size: '140px 140px',
+        size: '40px 40px',
       };
     }
-    case 'vignette':
+    case 'blueprint-frame': {
+      const sCorner = encodeURIComponent(cStrong);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'><path d='M0 8V0h8M72 0h8v8M0 72v8h8M72 80h8v-8' stroke='${sCorner}' stroke-width='1' fill='none'/></svg>`;
       return {
-        image: `radial-gradient(circle at 50% 25%, transparent 35%, ${cStrong} 100%)`,
-        size: '100% 100%',
+        image: `url("data:image/svg+xml,${svg}")`,
+        size: '80px 80px',
       };
+    }
+    case 'woven-twill': {
+      const sA = encodeURIComponent(c);
+      const sB = encodeURIComponent(cSoft);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'><path d='M0 4h4v4H0zM4 0h4v4H4z' fill='${sB}'/><path d='M0 8L8 0' stroke='${sA}' stroke-width='0.75'/></svg>`;
+      return {
+        image: `url("data:image/svg+xml,${svg}")`,
+        size: '8px 8px',
+      };
+    }
+    case 'vertical-ledger':
+      return {
+        image: `linear-gradient(to right, ${cStrong} 1px, transparent 1px), linear-gradient(to right, ${cSoft} 1px, transparent 1px)`,
+        size: '120px 100%, 30px 100%',
+      };
+    case 'concentric-radar': {
+      const sArc = encodeURIComponent(c);
+      const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'><circle cx='48' cy='48' r='22' stroke='${sArc}' stroke-width='0.9' fill='none'/><circle cx='48' cy='48' r='42' stroke='${sArc}' stroke-width='0.9' stroke-dasharray='3 5' fill='none'/></svg>`;
+      return {
+        image: `url("data:image/svg+xml,${svg}")`,
+        size: '96px 96px',
+      };
+    }
     default:
       return {
         image: 'none',
@@ -98,6 +104,7 @@ export function versionToStyleVars(version, mode = 'light') {
   const attrs = version.attributes?.[safeMode] || version.attributes.light;
   const rarity = version.rarityBorders?.[safeMode] || version.rarityBorders.light;
   const costOv = version.costOverlay?.[safeMode] || version.costOverlay?.light || {};
+  const slotOv = version.slotOverlay || {};
   const shape = version.shape || {};
   const matrix = version.matrix || {};
   const fonts = version.fonts || {};
@@ -134,6 +141,14 @@ export function versionToStyleVars(version, mode = 'light') {
     '--lab-warning': theme.warning,
     '--lab-success': theme.success,
 
+    // コスト増減チップ用：減少=黄色、増加=青
+    '--chip-cost-down-text': safeMode === 'dark' ? '#fde047' : '#854d0e',
+    '--chip-cost-down-border': safeMode === 'dark' ? '#eab308' : '#ca8a04',
+    '--chip-cost-down-bg': safeMode === 'dark' ? 'rgba(250, 204, 21, 0.14)' : 'rgba(234, 179, 8, 0.16)',
+    '--chip-cost-up-text': safeMode === 'dark' ? '#60a5fa' : '#1d4ed8',
+    '--chip-cost-up-border': safeMode === 'dark' ? '#3b82f6' : '#2563eb',
+    '--chip-cost-up-bg': safeMode === 'dark' ? 'rgba(59, 130, 246, 0.16)' : 'rgba(37, 99, 235, 0.10)',
+
     '--lab-card-radius': `${Number(shape.cardRadius ?? 0)}px`,
     '--lab-inner-radius': `${Number(shape.innerRadius ?? 0)}px`,
     '--lab-badge-radius': `${Number(shape.badgeRadius ?? 0)}px`,
@@ -151,15 +166,22 @@ export function versionToStyleVars(version, mode = 'light') {
     '--rarity-c': rarity.C,
     '--rarity-empty': rarity.empty,
 
-    '--cost-down-bg': costOv.downBg || '#18181b',
-    '--cost-down-text': costOv.downText || '#fde047',
-    '--cost-down-border': costOv.downBorder || '#eab308',
-    '--cost-up-bg': costOv.upBg || '#7f1d1d',
-    '--cost-up-text': costOv.upText || '#fecaca',
-    '--cost-up-border': costOv.upBorder || '#ef4444',
-    '--cost-normal-bg': costOv.normalBg || '#ffffff',
-    '--cost-normal-text': costOv.normalText || '#0f172a',
-    '--cost-normal-border': costOv.normalBorder || '#94a3b8',
+    '--cost-down-bg': sanitizeHexColor(costOv.downBg, '#bdb600'),
+    '--cost-down-text': sanitizeHexColor(costOv.downText, '#ffffff'),
+    '--cost-down-border': sanitizeHexColor(costOv.downBorder, '#00000000'),
+    '--cost-up-bg': sanitizeHexColor(costOv.upBg, '#423fee'),
+    '--cost-up-text': sanitizeHexColor(costOv.upText, '#ffffff'),
+    '--cost-up-border': sanitizeHexColor(costOv.upBorder, '#00000000'),
+    '--cost-normal-bg': sanitizeHexColor(costOv.normalBg, '#00000088'),
+    '--cost-normal-text': sanitizeHexColor(costOv.normalText, '#ffffff'),
+    '--cost-normal-border': sanitizeHexColor(costOv.normalBorder, '#00000000'),
+
+    '--slot-label-size': `${Number(slotOv.labelSize ?? 9.5)}px`,
+    '--slot-value-size': `${Number(slotOv.valueSize ?? 15)}px`,
+    '--slot-plus-size': `${Number(slotOv.plusValueSize ?? 11.5)}px`,
+    '--slot-tag-size': `${Number(slotOv.tagSize ?? 9.5)}px`,
+    '--slot-stroke-width': `${Number(slotOv.strokeWidth ?? 2.5)}px`,
+    '--slot-line-gap': `${Number(slotOv.lineGap ?? 0)}px`,
 
     '--matrix-cell-size': `${Number(matrix.cellSize ?? 20)}px`,
     '--card-matrix-cell-size': `${Number(matrix.cardCellSize ?? 12)}px`,
@@ -194,6 +216,7 @@ export function generateCssTokens(version) {
   const darkRarity = version.rarityBorders.dark;
   const lightCost = version.costOverlay?.light || {};
   const darkCost = version.costOverlay?.dark || {};
+  const slotOv = version.slotOverlay || {};
   const shape = version.shape;
   const matrix = version.matrix;
   const fonts = version.fonts || {};
@@ -222,7 +245,7 @@ export function generateCssTokens(version) {
   return `/* =====================================================
  * OTELLIA UI Design Tokens — ${version.name}
  * Card Pattern: ${version.cardPattern} | Group Mode: ${version.groupApplyMode}
- * BG Pattern: ${shape.bgPattern} (x${shape.bgPatternStrength ?? 1})
+ * UI Finish: ${version.uiFinish || 'precision'} | BG Pattern: ${shape.bgPattern} (x${shape.bgPatternStrength ?? 1})
  * Cost Overlay Placement: ${version.costOverlay?.placement || 'top-tag-bottom-num'}
  * Fonts: UI=${fonts.ui || 'noto-sans-jp'} / NUM=${fonts.mono || 'roboto-mono'}
  * ===================================================== */
@@ -266,15 +289,23 @@ export function generateCssTokens(version) {
   --color-neutral: ${lightAttr.neutral};
 
   /* コスト増減表示カラー（Light） */
-  --cost-down-bg: ${lightCost.downBg};
-  --cost-down-text: ${lightCost.downText};
-  --cost-down-border: ${lightCost.downBorder};
-  --cost-up-bg: ${lightCost.upBg};
-  --cost-up-text: ${lightCost.upText};
-  --cost-up-border: ${lightCost.upBorder};
-  --cost-normal-bg: ${lightCost.normalBg};
-  --cost-normal-text: ${lightCost.normalText};
-  --cost-normal-border: ${lightCost.normalBorder};
+  --cost-down-bg: ${sanitizeHexColor(lightCost.downBg, '#bdb600')};
+  --cost-down-text: ${sanitizeHexColor(lightCost.downText, '#ffffff')};
+  --cost-down-border: ${sanitizeHexColor(lightCost.downBorder, '#00000000')};
+  --cost-up-bg: ${sanitizeHexColor(lightCost.upBg, '#423fee')};
+  --cost-up-text: ${sanitizeHexColor(lightCost.upText, '#ffffff')};
+  --cost-up-border: ${sanitizeHexColor(lightCost.upBorder, '#00000000')};
+  --cost-normal-bg: ${sanitizeHexColor(lightCost.normalBg, '#00000088')};
+  --cost-normal-text: ${sanitizeHexColor(lightCost.normalText, '#ffffff')};
+  --cost-normal-border: ${sanitizeHexColor(lightCost.normalBorder, '#00000000')};
+
+  /* 16枠テキストオーバーレイ寸法 */
+  --slot-label-size: ${slotOv.labelSize ?? 9.5}px;
+  --slot-value-size: ${slotOv.valueSize ?? 15}px;
+  --slot-plus-size: ${slotOv.plusValueSize ?? 11.5}px;
+  --slot-tag-size: ${slotOv.tagSize ?? 9.5}px;
+  --slot-stroke-width: ${slotOv.strokeWidth ?? 2.5}px;
+  --slot-line-gap: ${slotOv.lineGap ?? 0}px;
 
   /* 4x4マトリクス レアリティ枠線（Light） */
   --rarity-border-s: ${lightRarity.S};
@@ -317,15 +348,15 @@ html.dark-mode {
   --color-neutral: ${darkAttr.neutral};
 
   /* コスト増減表示カラー（Dark） */
-  --cost-down-bg: ${darkCost.downBg};
-  --cost-down-text: ${darkCost.downText};
-  --cost-down-border: ${darkCost.downBorder};
-  --cost-up-bg: ${darkCost.upBg};
-  --cost-up-text: ${darkCost.upText};
-  --cost-up-border: ${darkCost.upBorder};
-  --cost-normal-bg: ${darkCost.normalBg};
-  --cost-normal-text: ${darkCost.normalText};
-  --cost-normal-border: ${darkCost.normalBorder};
+  --cost-down-bg: ${sanitizeHexColor(darkCost.downBg, '#a19b00')};
+  --cost-down-text: ${sanitizeHexColor(darkCost.downText, '#ffffff')};
+  --cost-down-border: ${sanitizeHexColor(darkCost.downBorder, '#00000000')};
+  --cost-up-bg: ${sanitizeHexColor(darkCost.upBg, '#3b48f5')};
+  --cost-up-text: ${sanitizeHexColor(darkCost.upText, '#ffffff')};
+  --cost-up-border: ${sanitizeHexColor(darkCost.upBorder, '#00000000')};
+  --cost-normal-bg: ${sanitizeHexColor(darkCost.normalBg, '#00000088')};
+  --cost-normal-text: ${sanitizeHexColor(darkCost.normalText, '#ffffff')};
+  --cost-normal-border: ${sanitizeHexColor(darkCost.normalBorder, '#00000000')};
 
   /* 4x4マトリクス レアリティ枠線（Dark） */
   --rarity-border-s: ${darkRarity.S};

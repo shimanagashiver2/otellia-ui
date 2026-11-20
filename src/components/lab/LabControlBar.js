@@ -86,7 +86,7 @@ export default function LabControlBar({
               >
                 {versions.map((v) => (
                   <option key={v.id} value={v.id}>
-                    {v.name} {v.builtin ? '' : '★'}
+                    {v.name} {v.builtin ? '' : '(カスタム)'}
                   </option>
                 ))}
               </select>

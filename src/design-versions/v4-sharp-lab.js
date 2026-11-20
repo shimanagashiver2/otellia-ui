@@ -6,7 +6,7 @@ const v4SharpLab = {
   id: 'v4-sharp-lab',
   name: 'v4: Sharp Lab（ユーザー調整ベース）',
   description:
-    'ユーザー調整済みの配色・Noto Sans JP × Roboto Mono・均等縦ラインdatasheet・小型4×4を組み込んだ最新標準案。',
+    'ユーザー調整済みの配色・Noto Sans JP × Roboto Mono・均等縦ラインdatasheet・小型4×4・最新コスト配色を組み込んだ標準案。',
   builtin: true,
   cardPattern: 'datasheet',
   groupApplyMode: 'title-band',

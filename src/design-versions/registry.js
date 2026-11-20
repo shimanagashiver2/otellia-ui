@@ -4,6 +4,7 @@ import v2LabPrecision from './v2-lab-precision';
 import v3LabSoft from './v3-lab-soft';
 import v4SharpLab from './v4-sharp-lab';
 import { BG_PATTERN_OPTIONS, createDefaultExtensions } from './defaults';
+import { sanitizeHexColor } from '@/lib/colorUtils';
 
 export const BUILTIN_VERSIONS = [
   v4SharpLab,
@@ -42,12 +43,29 @@ const VALID_APPLY_MODES = new Set([
   'tinted',
 ]);
 
+const VALID_UI_FINISHES = new Set(['precision', 'carbon', 'tactile']);
+
 const VALID_BG_PATTERNS = new Set(BG_PATTERN_OPTIONS.map((p) => p.id));
 
 function mergeSection(base, incoming) {
   return {
     ...(base || {}),
     ...(incoming && typeof incoming === 'object' ? incoming : {}),
+  };
+}
+
+function sanitizeCostTheme(theme, fallbackTheme) {
+  const merged = mergeSection(fallbackTheme, theme);
+  return {
+    downBg: sanitizeHexColor(merged.downBg, fallbackTheme.downBg),
+    downText: sanitizeHexColor(merged.downText, fallbackTheme.downText),
+    downBorder: sanitizeHexColor(merged.downBorder, fallbackTheme.downBorder),
+    upBg: sanitizeHexColor(merged.upBg, fallbackTheme.upBg),
+    upText: sanitizeHexColor(merged.upText, fallbackTheme.upText),
+    upBorder: sanitizeHexColor(merged.upBorder, fallbackTheme.upBorder),
+    normalBg: sanitizeHexColor(merged.normalBg, fallbackTheme.normalBg),
+    normalText: sanitizeHexColor(merged.normalText, fallbackTheme.normalText),
+    normalBorder: sanitizeHexColor(merged.normalBorder, fallbackTheme.normalBorder),
   };
 }
 
@@ -89,6 +107,9 @@ export function normalizeVersion(raw, fallback = v4SharpLab) {
     shapeMerged.bgPatternStrength = 1;
   }
 
+  const rawUiFinish = src.uiFinish || base.uiFinish || 'precision';
+  const uiFinish = VALID_UI_FINISHES.has(rawUiFinish) ? rawUiFinish : 'precision';
+
   return {
     id: typeof src.id === 'string' && src.id.trim() ? src.id.trim() : base.id,
     name:
@@ -102,6 +123,7 @@ export function normalizeVersion(raw, fallback = v4SharpLab) {
     builtin: Boolean(src.builtin && BUILTIN_VERSION_MAP[src.id]),
     cardPattern,
     groupApplyMode,
+    uiFinish,
     shape: shapeMerged,
     themes: {
       light: mergeSection(base.themes?.light, src.themes?.light),
@@ -141,15 +163,19 @@ export function normalizeVersion(raw, fallback = v4SharpLab) {
         src.costOverlay?.placement ||
         base.costOverlay?.placement ||
         defaults.costOverlay.placement,
-      light: mergeSection(
-        defaults.costOverlay.light,
-        mergeSection(base.costOverlay?.light, src.costOverlay?.light)
+      light: sanitizeCostTheme(
+        mergeSection(base.costOverlay?.light, src.costOverlay?.light),
+        defaults.costOverlay.light
       ),
-      dark: mergeSection(
-        defaults.costOverlay.dark,
-        mergeSection(base.costOverlay?.dark, src.costOverlay?.dark)
+      dark: sanitizeCostTheme(
+        mergeSection(base.costOverlay?.dark, src.costOverlay?.dark),
+        defaults.costOverlay.dark
       ),
     },
+    slotOverlay: mergeSection(
+      defaults.slotOverlay,
+      mergeSection(base.slotOverlay, src.slotOverlay)
+    ),
     groupGradients: mergedGroupGradients,
   };
 }

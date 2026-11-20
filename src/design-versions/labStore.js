@@ -10,7 +10,7 @@ import {
 const COLOR_SCHEME_KEY = 'otellia-ui-color-scheme';
 const THEME_MODE_KEY = 'otellia-ui-theme-mode';
 const GROUP_NOTES_KEY = 'otellia-ui-group-notes-v1';
-const SCHEMA_MIGRATION_KEY = 'otellia-ui-v4-rev2';
+const SCHEMA_MIGRATION_KEY = 'otellia-ui-v4-rev3';
 
 const SERVER_LAB_SNAPSHOT = getInitialLabState();
 let clientLabCache = null;

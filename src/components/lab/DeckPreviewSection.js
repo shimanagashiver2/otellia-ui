@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useSyncExternalStore } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import {
   GROUP_BY_KEY,
   GROUP_ITEMS,
@@ -14,33 +14,45 @@ import {
   calcDeckSummary,
   getSampleChar,
   getSealLabel,
+  groupSupportsCostVariation,
 } from '@/data/sampleDecks';
+import { DEFAULT_SLOT_OVERLAY } from '@/design-versions/defaults';
 import {
   getGroupNotesServerSnapshot,
   getGroupNotesSnapshot,
   subscribeGroupNotes,
   updateGroupNote,
 } from '@/design-versions/labStore';
-import { assetPath, pieceImageUrl } from '@/lib/assetPath';
+import { assetPath, pieceImageUrl, rarityImageUrl } from '@/lib/assetPath';
+import { toPickerHex } from '@/lib/colorUtils';
+import { useDialogLightDismiss } from '@/lib/useDialogLightDismiss';
 import DeckCardVariant from './DeckCardVariant';
 import PreviewSplitWrapper from './PreviewSplitWrapper';
+import {
+  IconAtk,
+  IconClose,
+  IconCost,
+  IconHp,
+  IconPlusMode,
+  IconRarity,
+  IconSliders,
+} from './UiIcons';
 
 const COST_LIMIT_OPTIONS = Array.from({ length: 35 }, (_, i) => 150 + i * 5); // 150..320 (5刻み)
 const DELTA_OPTIONS = Array.from({ length: 36 }, (_, i) => i - 25).filter((n) => n !== 0); // -25..+10
 
 const OVERLAY_MODES = [
-  { id: 'cost', label: 'コスト' },
-  { id: 'rarity', label: 'レアリティ' },
-  { id: 'atk', label: 'ATK' },
-  { id: 'hp', label: 'HP' },
-  { id: 'plus', label: 'プラス値' },
+  { id: 'cost', label: 'コスト', short: 'コスト', Icon: IconCost },
+  { id: 'rarity', label: 'レアリティ', short: 'レア', Icon: IconRarity },
+  { id: 'atk', label: 'ATK', short: 'ATK', Icon: IconAtk },
+  { id: 'hp', label: 'HP', short: 'HP', Icon: IconHp },
+  { id: 'plus', label: 'プラス値', short: 'プラス', Icon: IconPlusMode },
 ];
 
-const PLACEMENT_OPTIONS = [
-  { id: 'top-tag-bottom-num', label: '上部帯＋右下Cost(ゲーム風)' },
-  { id: 'bottom-right-badge', label: '右下 18(-2) 一体型' },
-  { id: 'top-right-delta', label: '右上差分＋右下数値' },
-  { id: 'bottom-bar', label: '下端フラット帯' },
+const SWITCHER_DESIGNS = [
+  { id: 'tabs', label: '案A: 5等分下線タブ' },
+  { id: 'icon-bar', label: '案B: アイコン+文字バー' },
+  { id: 'stat-linked', label: '案C: ステータス欄連動' },
 ];
 
 const INITIAL_SEAL_MODIFIERS = [
@@ -52,31 +64,12 @@ const INITIAL_CHAR_EXCEPTIONS = [{ id: 'ex-1', charId: 8179, delta: -2 }];
 
 const ALL_SAMPLE_CHARS_LIST = Object.values(SAMPLE_CHARACTERS);
 
-function EyeIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
 export default function DeckPreviewSection({
   version,
   themeMode,
   viewportWidth,
   onUpdateCostOverlayColor,
-  onChangeCostOverlayPlacement,
+  onUpdateSlotOverlay,
 }) {
   const groupNotes = useSyncExternalStore(
     subscribeGroupNotes,
@@ -97,15 +90,17 @@ export default function DeckPreviewSection({
   const [costLimit, setCostLimit] = useState(160);
   const [maxSCount, setMaxSCount] = useState(3);
   const [maxBCount, setMaxBCount] = useState(1);
+  const [slotClickNotice, setSlotClickNotice] = useState('');
 
-  // 目ボタン切替テスト状態
+  // 5項目切替・文字細調整状態
   const [overlayMode, setOverlayMode] = useState('cost');
-  const [eyeUiStyle, setEyeUiStyle] = useState('cycle'); // 'cycle' | 'tabs'
+  const [switcherDesign, setSwitcherDesign] = useState('tabs'); // 'tabs' | 'icon-bar' | 'stat-linked'
   const [autoSortByStat, setAutoSortByStat] = useState(true);
+  const [showSlotTypoPanel, setShowSlotTypoPanel] = useState(true);
 
   // コスト増減設定
   const [costColorEditTheme, setCostColorEditTheme] = useState('light');
-  const [showCostColorConfig, setShowCostColorConfig] = useState(true);
+  const [showCostColorConfig, setShowCostColorConfig] = useState(false);
   const [modifiers, setModifiers] = useState(INITIAL_SEAL_MODIFIERS);
   const [charExceptions, setCharExceptions] = useState(INITIAL_CHAR_EXCEPTIONS);
 
@@ -114,12 +109,20 @@ export default function DeckPreviewSection({
   const [newRarity, setNewRarity] = useState('S');
   const [newDelta, setNewDelta] = useState(-2);
 
-  // 個別キャラ指定（方式A: 16枠タップ / 方式B: 全キャラ検索）
-  const [exceptionInputTab, setExceptionInputTab] = useState('slot'); // 'slot' | 'search'
-  const [selectedSlotCharId, setSelectedSlotCharId] = useState(8167);
+  // 個別キャラ指定UX比較: 'inline' (ルール欄内2タブ) | 'dialog' (専用編集モーダル)
+  const [ruleUiMode, setRuleUiMode] = useState('inline');
+  const [exceptionSubTab, setExceptionSubTab] = useState('deck16'); // 'deck16' | 'search'
+  const [selectedExCharId, setSelectedExCharId] = useState(8167);
   const [charSearchFilter, setCharSearchFilter] = useState('');
   const [newExCharId, setNewExCharId] = useState(8195);
   const [newExDelta, setNewExDelta] = useState(-20);
+
+  const ruleDialogRef = useRef(null);
+  useDialogLightDismiss(ruleDialogRef);
+
+  const supportsCostVariation = groupSupportsCostVariation(editorGroupKey);
+  const activeModifiers = supportsCostVariation ? modifiers : [];
+  const activeExceptions = supportsCostVariation ? charExceptions : [];
 
   const filteredDecks = SAMPLE_DECKS.filter((d) => {
     if (groupFilter !== 'all' && d.groupKey !== groupFilter) return false;
@@ -145,9 +148,9 @@ export default function DeckPreviewSection({
 
   const editorDeck =
     SAMPLE_DECKS.find((d) => d.id === activeEditorDeckId) || SAMPLE_DECKS[1];
-  const editorStats = calcDeckSummary(editorDeck, modifiers, charExceptions);
+  const editorStats = calcDeckSummary(editorDeck, activeModifiers, activeExceptions);
 
-  // 目ボタンで ATK / HP を選んだときの連動ソート（リーダー0番固定＋サブ15体降順）
+  // ATK / HP を選んだときの連動ソート（リーダー0番固定＋サブ15体降順）
   const displaySubs = [...editorDeck.subs];
   if (autoSortByStat && (overlayMode === 'atk' || overlayMode === 'hp')) {
     displaySubs.sort((aId, bId) => {
@@ -165,15 +168,9 @@ export default function DeckPreviewSection({
   const isSOver = maxSCount !== 99 && editorStats.rarityCounts.S > maxSCount;
   const isBOver = maxBCount !== 99 && editorStats.rarityCounts.B > maxBCount;
 
-  const costPlacement = version.costOverlay?.placement || 'top-tag-bottom-num';
   const editingCostColors =
     version.costOverlay?.[costColorEditTheme] || version.costOverlay?.light || {};
-
-  const cycleOverlayMode = () => {
-    const idx = OVERLAY_MODES.findIndex((m) => m.id === overlayMode);
-    const next = OVERLAY_MODES[(idx + 1) % OVERLAY_MODES.length];
-    setOverlayMode(next.id);
-  };
+  const slotOverlay = { ...DEFAULT_SLOT_OVERLAY, ...(version.slotOverlay || {}) };
 
   const handleCopyGroupSpecs = async () => {
     const md = buildGroupSpecsMarkdown(groupNotes);
@@ -188,7 +185,8 @@ export default function DeckPreviewSection({
     setActiveEditorDeckId(deck.id);
     setIdInput(deck.deckCode);
     setEditorGroupKey(deck.groupKey);
-    setSelectedSlotCharId(deck.leaderId);
+    setSelectedExCharId(deck.leaderId);
+    setSlotClickNotice('');
     const spec = GROUP_RULE_SPECS.find((s) => s.key === deck.groupKey);
     if (spec) setCostLimit(spec.defaultLimit);
   };
@@ -231,10 +229,16 @@ export default function DeckPreviewSection({
     });
   };
 
-  const selectedCharObj = getSampleChar(selectedSlotCharId);
-  const selectedCharDelta =
-    charExceptions.find((ex) => Number(ex.charId) === Number(selectedSlotCharId))
+  const selectedExCharObj = getSampleChar(selectedExCharId);
+  const selectedExCharDelta =
+    charExceptions.find((ex) => Number(ex.charId) === Number(selectedExCharId))
       ?.delta || 0;
+
+  const uniqueDeckChars = Array.from(
+    new Set(all16Slots.filter((id) => Boolean(getSampleChar(id))))
+  )
+    .map((id) => getSampleChar(id))
+    .filter(Boolean);
 
   const searchableChars = ALL_SAMPLE_CHARS_LIST.filter((c) =>
     !charSearchFilter.trim()
@@ -242,21 +246,210 @@ export default function DeckPreviewSection({
       : c.name.toLowerCase().includes(charSearchFilter.trim().toLowerCase())
   );
 
-  const currentOverlayLabel =
-    OVERLAY_MODES.find((m) => m.id === overlayMode)?.label || 'コスト';
+  const renderRuleEditorsBody = () => (
+    <div className="cost-rule-editors-stack">
+      <div className="modifier-form-row">
+        <span className="modifier-title">1) 印 × レアリティ コスト増減</span>
+        <div className="modifier-inputs">
+          <select
+            className="ctrl-select"
+            value={newSealId}
+            onChange={(e) => setNewSealId(Number(e.target.value))}
+            aria-label="対象の印"
+          >
+            {Object.entries(SEAL_NAME_MAP).map(([id, label]) => (
+              <option key={id} value={id}>
+                {label}印
+              </option>
+            ))}
+            <option value={23}>印 #23（将来追加例）</option>
+          </select>
+
+          <select
+            className="ctrl-select"
+            value={newRarity}
+            onChange={(e) => setNewRarity(e.target.value)}
+            aria-label="対象レアリティ括り"
+          >
+            {RARITY_BUCKETS.map((b) => (
+              <option key={b} value={b}>
+                {b === 'S' ? 'S / S+' : b === 'A' ? 'A / A+' : b}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="ctrl-select"
+            value={newDelta}
+            onChange={(e) => setNewDelta(Number(e.target.value))}
+            aria-label="コスト増減"
+          >
+            {[-10, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5].map((d) => (
+              <option key={d} value={d}>
+                {d > 0 ? `+${d}` : d}
+              </option>
+            ))}
+          </select>
+
+          <button type="button" className="ui-btn is-primary is-sm" onClick={addModifier}>
+            印補正を追加
+          </button>
+        </div>
+      </div>
+
+      <div className="exception-ux-block">
+        <div className="modifier-form-row">
+          <span className="modifier-title">
+            2) 個別キャラ コスト増減（白の塔 -20 / カップ戦例外対応）
+          </span>
+          <div className="ctrl-segmented">
+            <button
+              type="button"
+              className={exceptionSubTab === 'deck16' ? 'is-active' : ''}
+              onClick={() => setExceptionSubTab('deck16')}
+            >
+              編成中キャラから選択
+            </button>
+            <button
+              type="button"
+              className={exceptionSubTab === 'search' ? 'is-active' : ''}
+              onClick={() => setExceptionSubTab('search')}
+            >
+              全キャラ検索から追加
+            </button>
+          </div>
+        </div>
+
+        {exceptionSubTab === 'deck16' ? (
+          <div className="ex-mini-deck-panel">
+            <div className="ex-mini-char-strip" role="listbox" aria-label="編成中の駒から対象を選択">
+              {uniqueDeckChars.map((ch) => {
+                const isSelected = Number(selectedExCharId) === Number(ch.id);
+                const exItem = charExceptions.find(
+                  (ex) => Number(ex.charId) === Number(ch.id)
+                );
+                return (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    className={`ex-mini-char-btn ${isSelected ? 'is-selected' : ''} ${
+                      exItem ? (exItem.delta < 0 ? 'has-down' : 'has-up') : ''
+                    }`}
+                    onClick={() => setSelectedExCharId(ch.id)}
+                    title={`${ch.name} (素Cost ${ch.cost})`}
+                  >
+                    <img src={pieceImageUrl(ch.id)} alt={ch.name} />
+                    {exItem && (
+                      <span className="ex-mini-delta num-tabular">
+                        {exItem.delta > 0 ? `+${exItem.delta}` : exItem.delta}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedExCharObj && (
+              <div className="slot-direct-bar">
+                <div className="slot-direct-target">
+                  <span>設定対象：</span>
+                  <strong>
+                    {selectedExCharObj.name}（素コスト {selectedExCharObj.cost}）
+                  </strong>
+                </div>
+                <div className="slot-direct-actions">
+                  {[-20, -10, -5, -2, -1, 0, 1, 2].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      className={`ctrl-btn is-xs ${
+                        selectedExCharDelta === d ? 'is-primary' : ''
+                      }`}
+                      onClick={() => setCharExceptionDelta(selectedExCharObj.id, d)}
+                    >
+                      {d > 0 ? `+${d}` : d === 0 ? '通常(0)' : d}
+                    </button>
+                  ))}
+                  <select
+                    className="ctrl-select"
+                    value={selectedExCharDelta}
+                    onChange={(e) =>
+                      setCharExceptionDelta(selectedExCharObj.id, e.target.value)
+                    }
+                    aria-label="選択キャラのコスト増減値"
+                  >
+                    <option value={0}>0（通常）</option>
+                    {DELTA_OPTIONS.map((d) => (
+                      <option key={d} value={d}>
+                        {d > 0 ? `+${d}` : d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="modifier-inputs">
+            <input
+              type="search"
+              className="ui-input is-compact"
+              style={{ maxWidth: '180px' }}
+              value={charSearchFilter}
+              onChange={(e) => setCharSearchFilter(e.target.value)}
+              placeholder="キャラ名で絞り込み..."
+              aria-label="例外キャラ絞り込み"
+            />
+            <select
+              className="ctrl-select"
+              value={newExCharId}
+              onChange={(e) => setNewExCharId(Number(e.target.value))}
+              aria-label="例外キャラ選択"
+            >
+              {searchableChars.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.rarity} / Cost {c.cost})
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="ctrl-select"
+              value={newExDelta}
+              onChange={(e) => setNewExDelta(Number(e.target.value))}
+              aria-label="個別コスト増減"
+            >
+              {DELTA_OPTIONS.map((d) => (
+                <option key={d} value={d}>
+                  {d > 0 ? `+${d}` : d}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              className="ui-btn is-secondary is-sm"
+              onClick={() => setCharExceptionDelta(newExCharId, newExDelta)}
+            >
+              個別指定を追加
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <section className="lab-section" id="deck-preview">
       <div className="lab-section-head">
         <div>
-          <span className="lab-kicker">
-            SECTION 05 // GROUP RULE MATRIX &amp; DECK WORKSPACE
-          </span>
           <h2 className="lab-section-title">
-            グループ仕様表・実戦倉庫・目ボタン切替 &amp; コスト補正ラボ
+            5. グループ別仕様表・実戦倉庫・デッキ編成プレビュー
           </h2>
           <p className="lab-section-desc">
-            外箱の入れ子（Cardocalypse）を排したフラットな面構成で、メモ付きグループ仕様表コピー、目ボタン5モード切替、コスト増減の色/配置調整、個別コスト入力2方式を比較できます。
+            仕様表コピー、5項目オーバーレイ表示切替（順送り廃止・狭い幅は中央全幅均等）、公式レアリティ画像、黒フチ＋2行右揃え文字サイズ調整、グループ連動コスト増減を確認できます。
           </p>
         </div>
       </div>
@@ -267,7 +460,7 @@ export default function DeckPreviewSection({
         viewportWidth={viewportWidth}
         renderContent={() => (
           <div className="real-deck-lab">
-            {/* Part 0: デッキグループ仕様マップ（単一サーフェス＋仕切り線） */}
+            {/* Part 0: デッキグループ仕様マップ */}
             <div className="flat-panel">
               <div className="mock-panel-head">
                 <div className="mock-title-group">
@@ -275,10 +468,10 @@ export default function DeckPreviewSection({
                 </div>
                 <button
                   type="button"
-                  className="ctrl-btn is-primary"
+                  className="ui-btn is-primary is-sm"
                   onClick={handleCopyGroupSpecs}
                 >
-                  {copiedSpecs ? 'コピーしました！' : '仕様表＋メモをコピー'}
+                  {copiedSpecs ? 'コピーしました' : '仕様表＋メモをコピー'}
                 </button>
               </div>
 
@@ -393,7 +586,8 @@ export default function DeckPreviewSection({
                     aria-label="マイデッキ検索"
                   />
                   <select
-                    className="ctrl-select"
+                    className="ui-select is-compact"
+                    style={{ width: 'auto', minWidth: '126px' }}
                     value={sortKey}
                     onChange={(e) => setSortKey(e.target.value)}
                     aria-label="並び替え"
@@ -445,7 +639,7 @@ export default function DeckPreviewSection({
               </div>
             </div>
 
-            {/* Part B: デッキ編集モック（フラット仕切り構成） */}
+            {/* Part B: デッキ編成モック */}
             <div className="flat-panel">
               <div className="mock-panel-head">
                 <div className="mock-title-group">
@@ -454,10 +648,11 @@ export default function DeckPreviewSection({
                     alt=""
                     className="ui-icon"
                   />
-                  <h3>デッキ編成・目👁️表示切替 &amp; コスト増減ラボ</h3>
+                  <h3>デッキ編成・5項目切替 &amp; コストルール</h3>
                 </div>
                 <select
-                  className="ctrl-select"
+                  className="ui-select is-compact"
+                  style={{ width: 'auto', minWidth: '170px' }}
                   value={editorDeck.id}
                   onChange={(e) => {
                     const found = SAMPLE_DECKS.find((d) => d.id === e.target.value);
@@ -502,19 +697,19 @@ export default function DeckPreviewSection({
                   >
                     <img src={assetPath('/images/icons/paste.svg')} alt="貼り付け" className="ui-icon" />
                   </button>
-                  <button type="button" className="ui-btn is-primary">
+                  <button type="button" className="ui-btn is-primary is-sm">
                     読込
                   </button>
                 </div>
               </div>
 
-              {/* ルール設定バー（仕切り線構成） */}
+              {/* グループ＆制限ルールバー */}
               <div className="editor-section-band">
                 <div className="rule-toolbar-flat">
                   <label className="rule-field">
                     <span>対象グループ</span>
                     <select
-                      className="ctrl-select"
+                      className="ui-select is-compact"
                       value={editorGroupKey}
                       onChange={(e) => handleSelectEditorGroup(e.target.value)}
                     >
@@ -529,7 +724,7 @@ export default function DeckPreviewSection({
                   <label className="rule-field">
                     <span>コスト上限（5刻み）</span>
                     <select
-                      className="ctrl-select"
+                      className="ui-select is-compact"
                       value={costLimit}
                       onChange={(e) => setCostLimit(Number(e.target.value))}
                     >
@@ -544,7 +739,7 @@ export default function DeckPreviewSection({
                   <label className="rule-field">
                     <span>S/S+ 上限</span>
                     <select
-                      className="ctrl-select"
+                      className="ui-select is-compact"
                       value={maxSCount}
                       onChange={(e) => setMaxSCount(Number(e.target.value))}
                     >
@@ -558,7 +753,7 @@ export default function DeckPreviewSection({
                   <label className="rule-field">
                     <span>B 上限</span>
                     <select
-                      className="ctrl-select"
+                      className="ui-select is-compact"
                       value={maxBCount}
                       onChange={(e) => setMaxBCount(Number(e.target.value))}
                     >
@@ -568,83 +763,33 @@ export default function DeckPreviewSection({
                       <option value={3}>3枚まで</option>
                     </select>
                   </label>
+
+                  {!supportsCostVariation && (
+                    <span className="rule-no-var-note">
+                      このグループはコスト増減なし（カップ戦・白の塔・闘技場選択時に増減設定を表示）
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* 統合ステータス行 + 目👁️ボタン切替UI（方式1 / 方式2 比較） */}
+              {/* 統合ステータス行 ＋ 5項目切替3案比較 */}
               <div className="editor-section-band">
                 <div className="editor-header-combo">
-                  <div className="editor-stats-flat">
-                    <div className={`stat-inline ${isCostOver ? 'is-error' : ''}`}>
-                      <span className="lbl">COST</span>
-                      <strong className="val num-tabular">
-                        {editorStats.adjustedCost}/{costLimit}
-                      </strong>
-                      {editorStats.adjustedCost !== editorStats.baseCost && (
-                        <small className="num-tabular">(素{editorStats.baseCost})</small>
-                      )}
+                  <div className="switch-design-toolbar">
+                    <span className="modifier-title">5項目切替UI比較</span>
+                    <div className="ctrl-segmented">
+                      {SWITCHER_DESIGNS.map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          className={switcherDesign === d.id ? 'is-active' : ''}
+                          onClick={() => setSwitcherDesign(d.id)}
+                        >
+                          {d.label}
+                        </button>
+                      ))}
                     </div>
-                    <div className="stat-inline">
-                      <span className="lbl">HP</span>
-                      <strong className="val num-tabular">{editorStats.totalHp}</strong>
-                    </div>
-                    <div className="stat-inline">
-                      <span className="lbl">ATK</span>
-                      <strong className="val num-tabular">{editorStats.totalAtk}</strong>
-                    </div>
-                    <div className={`stat-inline ${isSOver || isBOver ? 'is-error' : ''}`}>
-                      <span className="lbl">RARITY</span>
-                      <strong className="val num-tabular">
-                        S{editorStats.rarityCounts.S}/A{editorStats.rarityCounts.A}/B
-                        {editorStats.rarityCounts.B}/C{editorStats.rarityCounts.C}
-                      </strong>
-                    </div>
-                  </div>
-
-                  <div className="eye-controls-wrap">
-                    <div className="ctrl-segmented" title="表示切替UIの方式を比較">
-                      <button
-                        type="button"
-                        className={eyeUiStyle === 'cycle' ? 'is-active' : ''}
-                        onClick={() => setEyeUiStyle('cycle')}
-                      >
-                        方式1: 👁️順送り
-                      </button>
-                      <button
-                        type="button"
-                        className={eyeUiStyle === 'tabs' ? 'is-active' : ''}
-                        onClick={() => setEyeUiStyle('tabs')}
-                      >
-                        方式2: 5項目タブ
-                      </button>
-                    </div>
-
-                    {eyeUiStyle === 'cycle' ? (
-                      <button
-                        type="button"
-                        className="eye-cycle-btn"
-                        onClick={cycleOverlayMode}
-                        title="クリックで レアリティ→ATK→HP→コスト→プラス値 を切替"
-                      >
-                        <EyeIcon />
-                        <span>表示: {currentOverlayLabel}</span>
-                      </button>
-                    ) : (
-                      <div className="ctrl-segmented">
-                        {OVERLAY_MODES.map((m) => (
-                          <button
-                            key={m.id}
-                            type="button"
-                            className={overlayMode === m.id ? 'is-active' : ''}
-                            onClick={() => setOverlayMode(m.id)}
-                          >
-                            {m.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    <label className="checkbox-inline">
+                    <label className="comp-check is-compact">
                       <input
                         type="checkbox"
                         checked={autoSortByStat}
@@ -653,10 +798,142 @@ export default function DeckPreviewSection({
                       <span>ATK/HP時は自動降順</span>
                     </label>
                   </div>
+
+                  {/* 案C: ステータス行自体をクリック連動にする場合と通常表示 */}
+                  {switcherDesign === 'stat-linked' ? (
+                    <div className="stat-linked-bar">
+                      <button
+                        type="button"
+                        className={`stat-linked-btn ${overlayMode === 'cost' ? 'is-active' : ''} ${
+                          isCostOver ? 'is-error' : ''
+                        }`}
+                        onClick={() => setOverlayMode('cost')}
+                      >
+                        <span className="lbl">COST</span>
+                        <strong className="val num-tabular">
+                          {editorStats.adjustedCost}/{costLimit}
+                        </strong>
+                      </button>
+                      <button
+                        type="button"
+                        className={`stat-linked-btn ${overlayMode === 'hp' ? 'is-active' : ''}`}
+                        onClick={() => setOverlayMode('hp')}
+                      >
+                        <span className="lbl">HP</span>
+                        <strong className="val num-tabular">{editorStats.totalHp}</strong>
+                      </button>
+                      <button
+                        type="button"
+                        className={`stat-linked-btn ${overlayMode === 'atk' ? 'is-active' : ''}`}
+                        onClick={() => setOverlayMode('atk')}
+                      >
+                        <span className="lbl">ATK</span>
+                        <strong className="val num-tabular">{editorStats.totalAtk}</strong>
+                      </button>
+                      <button
+                        type="button"
+                        className={`stat-linked-btn ${overlayMode === 'rarity' ? 'is-active' : ''} ${
+                          isSOver || isBOver ? 'is-error' : ''
+                        }`}
+                        onClick={() => setOverlayMode('rarity')}
+                      >
+                        <span className="lbl">レア</span>
+                        <strong className="val num-tabular">
+                          S{editorStats.rarityCounts.S}/A{editorStats.rarityCounts.A}/B
+                          {editorStats.rarityCounts.B}/C{editorStats.rarityCounts.C}
+                        </strong>
+                      </button>
+                      <button
+                        type="button"
+                        className={`stat-linked-btn is-plus ${overlayMode === 'plus' ? 'is-active' : ''}`}
+                        onClick={() => setOverlayMode('plus')}
+                      >
+                        <span className="lbl">PLUS</span>
+                        <strong className="val num-tabular">表示</strong>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="editor-stats-flat">
+                        <div className={`stat-inline ${isCostOver ? 'is-error' : ''}`}>
+                          <span className="lbl">COST</span>
+                          <strong className="val num-tabular">
+                            {editorStats.adjustedCost}/{costLimit}
+                          </strong>
+                          {supportsCostVariation &&
+                            editorStats.adjustedCost !== editorStats.baseCost && (
+                              <small className="num-tabular">(素{editorStats.baseCost})</small>
+                            )}
+                        </div>
+                        <div className="stat-inline">
+                          <span className="lbl">HP</span>
+                          <strong className="val num-tabular">{editorStats.totalHp}</strong>
+                        </div>
+                        <div className="stat-inline">
+                          <span className="lbl">ATK</span>
+                          <strong className="val num-tabular">{editorStats.totalAtk}</strong>
+                        </div>
+                        <div className={`stat-inline ${isSOver || isBOver ? 'is-error' : ''}`}>
+                          <span className="lbl">RARITY</span>
+                          <strong className="val num-tabular">
+                            S{editorStats.rarityCounts.S}/A{editorStats.rarityCounts.A}/B
+                            {editorStats.rarityCounts.B}/C{editorStats.rarityCounts.C}
+                          </strong>
+                        </div>
+                      </div>
+
+                      {switcherDesign === 'tabs' && (
+                        <div
+                          className="overlay-five-tabs is-underline"
+                          role="tablist"
+                          aria-label="16枠表示項目切替"
+                        >
+                          {OVERLAY_MODES.map((m) => (
+                            <button
+                              key={m.id}
+                              type="button"
+                              role="tab"
+                              aria-selected={overlayMode === m.id}
+                              className={`overlay-five-tab ${
+                                overlayMode === m.id ? 'is-active' : ''
+                              }`}
+                              onClick={() => setOverlayMode(m.id)}
+                            >
+                              <span className="tab-full-lbl">{m.label}</span>
+                              <span className="tab-short-lbl">{m.short}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      {switcherDesign === 'icon-bar' && (
+                        <div
+                          className="overlay-five-tabs is-icon-bar"
+                          role="tablist"
+                          aria-label="16枠表示項目切替"
+                        >
+                          {OVERLAY_MODES.map(({ id, label, short, Icon }) => (
+                            <button
+                              key={id}
+                              type="button"
+                              role="tab"
+                              aria-selected={overlayMode === id}
+                              className={`overlay-icon-tab ${overlayMode === id ? 'is-active' : ''}`}
+                              onClick={() => setOverlayMode(id)}
+                            >
+                              <Icon size={15} />
+                              <span className="tab-full-lbl">{label}</span>
+                              <span className="tab-short-lbl">{short}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
-              {/* 16枠デッキグリッド（5モードオーバーレイ＋コスト配置/色反映） */}
+              {/* 16枠デッキグリッド */}
               <div className="editor-section-band">
                 <div className="editor-slots-grid">
                   {all16Slots.map((charId, idx) => {
@@ -668,18 +945,25 @@ export default function DeckPreviewSection({
                         </div>
                       );
                     }
-                    const costInfo = calcCharEffectiveCost(ch, modifiers, charExceptions);
+                    const costInfo = calcCharEffectiveCost(
+                      ch,
+                      activeModifiers,
+                      activeExceptions
+                    );
                     const deltaState =
                       costInfo.delta < 0 ? 'down' : costInfo.delta > 0 ? 'up' : 'normal';
-                    const isSelectedForEx = Number(selectedSlotCharId) === Number(ch.id);
 
                     return (
                       <button
                         key={`slot-${idx}-${ch.id}`}
                         type="button"
-                        onClick={() => setSelectedSlotCharId(ch.id)}
-                        className={`editor-slot is-clickable ${isSelectedForEx ? 'is-focused' : ''}`}
-                        title={`${ch.name} / ${getSealLabel(ch.type)}印 / ${ch.rarity} / Cost ${costInfo.effective}（クリックで個別コスト調整）`}
+                        onClick={() =>
+                          setSlotClickNotice(
+                            `枠${idx + 1}: ${ch.name} — 編成中はここをタップすると駒の選択・入れ替え画面が開きます`
+                          )
+                        }
+                        className="editor-slot is-clickable"
+                        title={`${ch.name} / ${getSealLabel(ch.type)}印 / ${ch.rarity} / Cost ${costInfo.effective}（タップで駒入れ替え想定）`}
                       >
                         <img
                           src={assetPath(`/images/bases/${ch.attr}.png`)}
@@ -693,396 +977,427 @@ export default function DeckPreviewSection({
                         />
                         {idx === 0 && <span className="slot-leader-badge">L</span>}
 
-                        {/* 左下：共通レアリティバッジ */}
-                        <span className={`slot-rarity-chip rarity-${ch.rarity[0].toLowerCase()}`}>
-                          {ch.rarity}
-                        </span>
+                        {/* 左下：公式レアリティPNG */}
+                        <img
+                          src={rarityImageUrl(ch.rarity)}
+                          alt={ch.rarity}
+                          className="slot-rarity-img"
+                        />
 
-                        {/* モード別オーバーレイ */}
+                        {/* 右下（背景なし・枠線なし・黒フチ＋黒シャドウ・右揃え複数行） */}
                         {overlayMode === 'rarity' && (
-                          <span className="slot-stat-overlay num-tabular">Lv.{ch.maxLv}</span>
+                          <div className="slot-hud-text" aria-label={`レベル ${ch.maxLv}`}>
+                            <span className="slot-hud-lbl">Lv.</span>
+                            <span className="slot-hud-val num-tabular">Max</span>
+                          </div>
                         )}
+
                         {overlayMode === 'atk' && (
-                          <span className="slot-stat-overlay num-tabular">
-                            <small>ATK</small> {ch.atk}
-                          </span>
+                          <div className="slot-hud-text">
+                            <span className="slot-hud-lbl">ATK</span>
+                            <span className="slot-hud-val num-tabular">{ch.atk}</span>
+                          </div>
                         )}
+
                         {overlayMode === 'hp' && (
-                          <span className="slot-stat-overlay num-tabular">
-                            <small>HP</small> {ch.hp}
-                          </span>
+                          <div className="slot-hud-text">
+                            <span className="slot-hud-lbl">HP</span>
+                            <span className="slot-hud-val num-tabular">{ch.hp}</span>
+                          </div>
                         )}
+
                         {overlayMode === 'plus' && (
-                          <span className="slot-plus-overlay num-tabular">
-                            <span>+{ch.hpPlus}</span>
-                            <span>+{ch.atkPlus}</span>
-                          </span>
+                          <div className="slot-hud-text is-plus">
+                            <span className="slot-hud-lbl">Plus</span>
+                            <span className="slot-hud-plus num-tabular">+{ch.hpPlus}</span>
+                            <span className="slot-hud-plus num-tabular">+{ch.atkPlus}</span>
+                          </div>
                         )}
+
                         {overlayMode === 'cost' && (
-                          <div className={`slot-cost-layer place-${costPlacement} state-${deltaState}`}>
-                            {costPlacement === 'top-tag-bottom-num' && (
-                              <>
-                                {costInfo.delta !== 0 && (
-                                  <span className="cost-top-tag">
-                                    コスト{costInfo.delta < 0 ? '↓' : '↑'}
-                                  </span>
-                                )}
-                                <span className="cost-bottom-num num-tabular">
-                                  <small>Cost.</small>
-                                  {costInfo.effective}
-                                </span>
-                              </>
+                          <div className={`slot-cost-layer state-${deltaState}`}>
+                            {supportsCostVariation && costInfo.delta !== 0 && (
+                              <span className="cost-top-tag">
+                                コスト{costInfo.delta < 0 ? '↓' : '↑'}
+                              </span>
                             )}
-                            {costPlacement === 'bottom-right-badge' && (
-                              <span className="cost-single-badge num-tabular">
+                            <div className="slot-hud-text">
+                              <span className="slot-hud-lbl">Cost.</span>
+                              <span className="slot-hud-val num-tabular">
                                 {costInfo.effective}
-                                {costInfo.delta !== 0 &&
-                                  `(${costInfo.delta > 0 ? `+${costInfo.delta}` : costInfo.delta})`}
                               </span>
-                            )}
-                            {costPlacement === 'top-right-delta' && (
-                              <>
-                                {costInfo.delta !== 0 && (
-                                  <span className="cost-delta-pill num-tabular">
-                                    {costInfo.delta > 0 ? `+${costInfo.delta}` : costInfo.delta}
-                                  </span>
-                                )}
-                                <span className="cost-bottom-num num-tabular">{costInfo.effective}</span>
-                              </>
-                            )}
-                            {costPlacement === 'bottom-bar' && (
-                              <span className="cost-full-bar num-tabular">
-                                Cost.{costInfo.effective}
-                                {costInfo.delta !== 0 &&
-                                  ` (${costInfo.delta > 0 ? `+${costInfo.delta}` : costInfo.delta})`}
-                              </span>
-                            )}
+                            </div>
                           </div>
                         )}
                       </button>
                     );
                   })}
                 </div>
-              </div>
 
-              {/* コスト増減の色 & 配置カスタム調整 + ルール編集（仕切り線バンド） */}
-              <div className="editor-section-band">
-                <div className="cost-config-header">
-                  <div className="cost-placement-row">
-                    <span className="modifier-title">コスト増減の配置</span>
-                    <div className="ctrl-segmented">
-                      {PLACEMENT_OPTIONS.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          className={costPlacement === p.id ? 'is-active' : ''}
-                          onClick={() => onChangeCostOverlayPlacement(p.id)}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
+                {slotClickNotice && (
+                  <div className="slot-tap-feedback">
+                    <span>{slotClickNotice}</span>
+                    <button
+                      type="button"
+                      className="ctrl-btn is-xs"
+                      onClick={() => setSlotClickNotice('')}
+                      aria-label="案内を閉じる"
+                    >
+                      <IconClose size={12} />
+                    </button>
+                  </div>
+                )}
+
+                {/* 16枠文字サイズ・黒フチ細調整パネル */}
+                <div className="slot-typo-box">
+                  <div className="slot-typo-head">
+                    <span className="slot-typo-title">
+                      <IconSliders size={14} />
+                      <span>16枠オーバーレイ文字サイズ・黒フチ細調整</span>
+                    </span>
+                    <div className="slot-typo-actions">
+                      <button
+                        type="button"
+                        className="ctrl-btn is-xs"
+                        onClick={() => {
+                          Object.entries(DEFAULT_SLOT_OVERLAY).forEach(([k, v]) =>
+                            onUpdateSlotOverlay(k, v)
+                          );
+                        }}
+                      >
+                        初期値へ
+                      </button>
+                      <button
+                        type="button"
+                        className="ctrl-btn is-xs"
+                        onClick={() => setShowSlotTypoPanel((v) => !v)}
+                      >
+                        {showSlotTypoPanel ? '閉じる' : '調整を開く'}
+                      </button>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="ctrl-btn is-xs"
-                    onClick={() => setShowCostColorConfig((v) => !v)}
-                  >
-                    {showCostColorConfig ? '色調整を閉じる' : 'コスト増減の色を調整'}
-                  </button>
-                </div>
 
-                {showCostColorConfig && (
-                  <div className="cost-color-customizer">
-                    <div className="cost-color-head">
-                      <span>コスト増減カラー設定</span>
+                  {showSlotTypoPanel && (
+                    <div className="slot-typo-sliders">
+                      <label className="slider-row is-dense">
+                        <span>上行ラベル</span>
+                        <input
+                          type="range"
+                          min="6"
+                          max="16"
+                          step="0.5"
+                          value={slotOverlay.labelSize}
+                          onChange={(e) =>
+                            onUpdateSlotOverlay('labelSize', Number(e.target.value))
+                          }
+                        />
+                        <output className="num-tabular">{slotOverlay.labelSize}px</output>
+                      </label>
+                      <label className="slider-row is-dense">
+                        <span>下行数値</span>
+                        <input
+                          type="range"
+                          min="9"
+                          max="26"
+                          step="0.5"
+                          value={slotOverlay.valueSize}
+                          onChange={(e) =>
+                            onUpdateSlotOverlay('valueSize', Number(e.target.value))
+                          }
+                        />
+                        <output className="num-tabular">{slotOverlay.valueSize}px</output>
+                      </label>
+                      <label className="slider-row is-dense">
+                        <span>Plus値</span>
+                        <input
+                          type="range"
+                          min="8"
+                          max="20"
+                          step="0.5"
+                          value={slotOverlay.plusValueSize}
+                          onChange={(e) =>
+                            onUpdateSlotOverlay('plusValueSize', Number(e.target.value))
+                          }
+                        />
+                        <output className="num-tabular">{slotOverlay.plusValueSize}px</output>
+                      </label>
+                      <label className="slider-row is-dense">
+                        <span>上部コスト帯</span>
+                        <input
+                          type="range"
+                          min="7"
+                          max="15"
+                          step="0.5"
+                          value={slotOverlay.tagSize}
+                          onChange={(e) =>
+                            onUpdateSlotOverlay('tagSize', Number(e.target.value))
+                          }
+                        />
+                        <output className="num-tabular">{slotOverlay.tagSize}px</output>
+                      </label>
+                      <label className="slider-row is-dense">
+                        <span>黒フチ太さ</span>
+                        <input
+                          type="range"
+                          min="1"
+                          max="4.5"
+                          step="0.5"
+                          value={slotOverlay.strokeWidth}
+                          onChange={(e) =>
+                            onUpdateSlotOverlay('strokeWidth', Number(e.target.value))
+                          }
+                        />
+                        <output className="num-tabular">{slotOverlay.strokeWidth}px</output>
+                      </label>
+                      <label className="slider-row is-dense">
+                        <span>行間微調整</span>
+                        <input
+                          type="range"
+                          min="-2"
+                          max="4"
+                          step="0.5"
+                          value={slotOverlay.lineGap}
+                          onChange={(e) =>
+                            onUpdateSlotOverlay('lineGap', Number(e.target.value))
+                          }
+                        />
+                        <output className="num-tabular">{slotOverlay.lineGap}px</output>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* コスト増減設定エリア：カップ戦・白の塔・闘技場等のときのみ表示 */}
+              {supportsCostVariation && (
+                <>
+                  <div className="editor-section-band">
+                    <div className="cost-config-header">
+                      <span className="modifier-title">
+                        上部「コスト↓ / ↑」帯の配色（減少＝黄・増加＝青 暫定反映済み）
+                      </span>
+                      <button
+                        type="button"
+                        className="ctrl-btn is-xs"
+                        onClick={() => setShowCostColorConfig((v) => !v)}
+                      >
+                        {showCostColorConfig ? '配色調整を閉じる' : '上部帯の色を調整'}
+                      </button>
+                    </div>
+
+                    {showCostColorConfig && (
+                      <div className="cost-color-customizer">
+                        <div className="cost-color-head">
+                          <span>上部帯カラー詳細編集</span>
+                          <div className="ctrl-segmented">
+                            <button
+                              type="button"
+                              className={costColorEditTheme === 'light' ? 'is-active' : ''}
+                              onClick={() => setCostColorEditTheme('light')}
+                            >
+                              Light 編集
+                            </button>
+                            <button
+                              type="button"
+                              className={costColorEditTheme === 'dark' ? 'is-active' : ''}
+                              onClick={() => setCostColorEditTheme('dark')}
+                            >
+                              Dark 編集
+                            </button>
+                          </div>
+                        </div>
+                        <div className="cost-color-grid">
+                          {[
+                            { prefix: 'down', title: 'コスト減 (コスト↓)' },
+                            { prefix: 'up', title: 'コスト増 (コスト↑)' },
+                          ].map((group) => (
+                            <div key={group.prefix} className="cost-color-col">
+                              <strong>{group.title}</strong>
+                              {[
+                                { key: `${group.prefix}Bg`, lbl: '背景' },
+                                { key: `${group.prefix}Text`, lbl: '文字' },
+                                { key: `${group.prefix}Border`, lbl: '枠線', allowNone: true },
+                              ].map((f) => {
+                                const rawVal = editingCostColors[f.key] || '#000000';
+                                return (
+                                  <div key={f.key} className="cost-color-picker-row">
+                                    <span>{f.lbl}</span>
+                                    <input
+                                      type="color"
+                                      value={toPickerHex(rawVal)}
+                                      onChange={(e) =>
+                                        onUpdateCostOverlayColor(
+                                          costColorEditTheme,
+                                          f.key,
+                                          e.target.value
+                                        )
+                                      }
+                                      aria-label={`${group.title} ${f.lbl}色`}
+                                    />
+                                    <input
+                                      type="text"
+                                      value={rawVal}
+                                      onChange={(e) =>
+                                        onUpdateCostOverlayColor(
+                                          costColorEditTheme,
+                                          f.key,
+                                          e.target.value
+                                        )
+                                      }
+                                      spellCheck={false}
+                                      aria-label={`${group.title} ${f.lbl}HEX`}
+                                    />
+                                    {f.allowNone && (
+                                      <button
+                                        type="button"
+                                        className="ctrl-btn is-xs"
+                                        onClick={() =>
+                                          onUpdateCostOverlayColor(
+                                            costColorEditTheme,
+                                            f.key,
+                                            '#00000000'
+                                          )
+                                        }
+                                        title="枠線なし（透明）にする"
+                                      >
+                                        透明
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 印×レアリティ＆個別指定（16枠タップと衝突しないUX比較） */}
+                  <div className="editor-section-band">
+                    <div className="modifier-form-row">
+                      <span className="modifier-title">コスト補正ルールの編集UI比較</span>
                       <div className="ctrl-segmented">
                         <button
                           type="button"
-                          className={costColorEditTheme === 'light' ? 'is-active' : ''}
-                          onClick={() => setCostColorEditTheme('light')}
+                          className={ruleUiMode === 'inline' ? 'is-active' : ''}
+                          onClick={() => setRuleUiMode('inline')}
                         >
-                          Light 編集
+                          方式1: 画面内ミニ選択＋検索
                         </button>
                         <button
                           type="button"
-                          className={costColorEditTheme === 'dark' ? 'is-active' : ''}
-                          onClick={() => setCostColorEditTheme('dark')}
+                          className={ruleUiMode === 'dialog' ? 'is-active' : ''}
+                          onClick={() => setRuleUiMode('dialog')}
                         >
-                          Dark 編集
+                          方式2: 専用モーダルで編集
                         </button>
                       </div>
                     </div>
-                    <div className="cost-color-grid">
-                      {[
-                        { prefix: 'down', title: 'コスト減 (↓)' },
-                        { prefix: 'up', title: 'コスト増 (↑)' },
-                        { prefix: 'normal', title: '通常コスト' },
-                      ].map((group) => (
-                        <div key={group.prefix} className="cost-color-col">
-                          <strong>{group.title}</strong>
-                          {[
-                            { key: `${group.prefix}Bg`, lbl: '背景' },
-                            { key: `${group.prefix}Text`, lbl: '文字' },
-                            { key: `${group.prefix}Border`, lbl: '枠線' },
-                          ].map((f) => (
-                            <label key={f.key} className="cost-color-picker-row">
-                              <span>{f.lbl}</span>
-                              <input
-                                type="color"
-                                value={editingCostColors[f.key] || '#000000'}
-                                onChange={(e) =>
-                                  onUpdateCostOverlayColor(
-                                    costColorEditTheme,
-                                    f.key,
-                                    e.target.value
-                                  )
-                                }
-                              />
-                              <input
-                                type="text"
-                                value={editingCostColors[f.key] || '#000000'}
-                                onChange={(e) =>
-                                  onUpdateCostOverlayColor(
-                                    costColorEditTheme,
-                                    f.key,
-                                    e.target.value
-                                  )
-                                }
-                                spellCheck={false}
-                              />
-                            </label>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* 印×レアリティ ＆ 個別キャラコスト補正入力UX比較 */}
-              <div className="editor-section-band">
-                <div className="modifier-form-row">
-                  <span className="modifier-title">1) 印 × レアリティ コスト増減</span>
-                  <div className="modifier-inputs">
-                    <select
-                      className="ctrl-select"
-                      value={newSealId}
-                      onChange={(e) => setNewSealId(Number(e.target.value))}
-                      aria-label="対象の印"
-                    >
-                      {Object.entries(SEAL_NAME_MAP).map(([id, label]) => (
-                        <option key={id} value={id}>
-                          {label}印
-                        </option>
-                      ))}
-                      <option value={23}>印 #23（将来追加例）</option>
-                    </select>
-
-                    <select
-                      className="ctrl-select"
-                      value={newRarity}
-                      onChange={(e) => setNewRarity(e.target.value)}
-                      aria-label="対象レアリティ括り"
-                    >
-                      {RARITY_BUCKETS.map((b) => (
-                        <option key={b} value={b}>
-                          {b === 'S' ? 'S / S+' : b === 'A' ? 'A / A+' : b}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      className="ctrl-select"
-                      value={newDelta}
-                      onChange={(e) => setNewDelta(Number(e.target.value))}
-                      aria-label="コスト増減"
-                    >
-                      {[-10, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5].map((d) => (
-                        <option key={d} value={d}>
-                          {d > 0 ? `+${d}` : d}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button type="button" className="ui-btn is-primary" onClick={addModifier}>
-                      印補正追加
-                    </button>
-                  </div>
-                </div>
-
-                {/* 個別キャラコスト増減: 方式A vs 方式B 比較 */}
-                <div className="exception-ux-block">
-                  <div className="modifier-form-row">
-                    <span className="modifier-title">
-                      2) 個別キャラ コスト増減（白の塔 -20 / カップ戦例外対応）
-                    </span>
-                    <div className="ctrl-segmented">
-                      <button
-                        type="button"
-                        className={exceptionInputTab === 'slot' ? 'is-active' : ''}
-                        onClick={() => setExceptionInputTab('slot')}
-                      >
-                        方式A: 16枠タップ指定
-                      </button>
-                      <button
-                        type="button"
-                        className={exceptionInputTab === 'search' ? 'is-active' : ''}
-                        onClick={() => setExceptionInputTab('search')}
-                      >
-                        方式B: 全キャラ検索追加
-                      </button>
-                    </div>
-                  </div>
-
-                  {exceptionInputTab === 'slot' ? (
-                    <div className="slot-direct-bar">
-                      <div className="slot-direct-target">
-                        <span>選択中の駒（上の16枠をクリックで切替）：</span>
-                        <strong>
-                          {selectedCharObj
-                            ? `${selectedCharObj.name} (素コスト ${selectedCharObj.cost})`
-                            : '未選択'}
-                        </strong>
-                      </div>
-                      {selectedCharObj && (
-                        <div className="slot-direct-actions">
-                          {[-20, -10, -5, -2, -1, 0, 1, 2].map((d) => (
-                            <button
-                              key={d}
-                              type="button"
-                              className={`ctrl-btn is-xs ${
-                                selectedCharDelta === d ? 'is-primary' : ''
-                              }`}
-                              onClick={() => setCharExceptionDelta(selectedCharObj.id, d)}
-                            >
-                              {d > 0 ? `+${d}` : d === 0 ? '通常(0)' : d}
-                            </button>
-                          ))}
-                          <select
-                            className="ctrl-select"
-                            value={selectedCharDelta}
-                            onChange={(e) =>
-                              setCharExceptionDelta(selectedCharObj.id, e.target.value)
-                            }
-                            aria-label="選択中キャラのコスト増減値"
-                          >
-                            <option value={0}>0（通常）</option>
-                            {DELTA_OPTIONS.map((d) => (
-                              <option key={d} value={d}>
-                                {d > 0 ? `+${d}` : d}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="modifier-inputs">
-                      <input
-                        type="search"
-                        className="ui-input is-compact"
-                        style={{ maxWidth: '180px' }}
-                        value={charSearchFilter}
-                        onChange={(e) => setCharSearchFilter(e.target.value)}
-                        placeholder="キャラ名で絞り込み..."
-                        aria-label="例外キャラ絞り込み"
-                      />
-                      <select
-                        className="ctrl-select"
-                        value={newExCharId}
-                        onChange={(e) => setNewExCharId(Number(e.target.value))}
-                        aria-label="例外キャラ選択"
-                      >
-                        {searchableChars.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name} ({c.rarity} / Cost {c.cost})
-                          </option>
-                        ))}
-                      </select>
-
-                      <select
-                        className="ctrl-select"
-                        value={newExDelta}
-                        onChange={(e) => setNewExDelta(Number(e.target.value))}
-                        aria-label="個別コスト増減"
-                      >
-                        {DELTA_OPTIONS.map((d) => (
-                          <option key={d} value={d}>
-                            {d > 0 ? `+${d}` : d}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button
-                        type="button"
-                        className="ui-btn is-secondary"
-                        onClick={() => setCharExceptionDelta(newExCharId, newExDelta)}
-                      >
-                        個別指定追加
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* 適用中ルールチップ */}
-                <div className="modifier-chips-row">
-                  {modifiers.length === 0 && charExceptions.length === 0 && (
-                    <span className="modifier-empty">コスト補正ルールなし（通常ルール）</span>
-                  )}
-                  {modifiers.map((mod) => (
-                    <span
-                      key={mod.id}
-                      className={`modifier-chip ${mod.delta < 0 ? 'is-down' : 'is-up'}`}
-                    >
-                      <span>
-                        {mod.rarityBucket} {getSealLabel(mod.sealId)}{' '}
-                        <strong className="num-tabular">
-                          {mod.delta > 0 ? `+${mod.delta}` : mod.delta}
-                        </strong>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setModifiers((prev) => prev.filter((m) => m.id !== mod.id))
-                        }
-                        aria-label="この補正を削除"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  {charExceptions.map((ex) => {
-                    const ch = getSampleChar(ex.charId);
-                    return (
-                      <span
-                        key={ex.id}
-                        className={`modifier-chip is-exception ${
-                          ex.delta < 0 ? 'is-down' : 'is-up'
-                        }`}
-                      >
-                        <span>
-                          個別: {ch ? ch.name : `#${ex.charId}`}{' '}
-                          <strong className="num-tabular">
-                            {ex.delta > 0 ? `+${ex.delta}` : ex.delta}
-                          </strong>
+                    {ruleUiMode === 'inline' ? (
+                      renderRuleEditorsBody()
+                    ) : (
+                      <div className="rule-modal-trigger-row">
+                        <span className="rule-modal-desc">
+                          編成画面を広く保ち、16枠タップ（駒入れ替え）との誤爆を防ぐ専用ダイアログ方式
                         </span>
                         <button
                           type="button"
-                          onClick={() => setCharExceptionDelta(ex.charId, 0)}
-                          aria-label="この個別指定を削除"
+                          className="ui-btn is-secondary is-sm"
+                          onClick={() => ruleDialogRef.current?.showModal()}
                         >
-                          ×
+                          コスト補正ルールを編集…
                         </button>
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
+                      </div>
+                    )}
+
+                    {/* 適用中ルールチップ（減少=黄 / 増加=青） */}
+                    <div className="modifier-chips-row">
+                      {modifiers.length === 0 && charExceptions.length === 0 && (
+                        <span className="modifier-empty">コスト補正ルールなし（通常ルール）</span>
+                      )}
+                      {modifiers.map((mod) => (
+                        <span
+                          key={mod.id}
+                          className={`modifier-chip ${mod.delta < 0 ? 'is-down' : 'is-up'}`}
+                        >
+                          <span>
+                            {mod.rarityBucket} {getSealLabel(mod.sealId)}{' '}
+                            <strong className="num-tabular">
+                              {mod.delta > 0 ? `+${mod.delta}` : mod.delta}
+                            </strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setModifiers((prev) => prev.filter((m) => m.id !== mod.id))
+                            }
+                            aria-label="この補正を削除"
+                          >
+                            <IconClose size={11} />
+                          </button>
+                        </span>
+                      ))}
+                      {charExceptions.map((ex) => {
+                        const ch = getSampleChar(ex.charId);
+                        return (
+                          <span
+                            key={ex.id}
+                            className={`modifier-chip is-exception ${
+                              ex.delta < 0 ? 'is-down' : 'is-up'
+                            }`}
+                          >
+                            <span>
+                              個別: {ch ? ch.name : `#${ex.charId}`}{' '}
+                              <strong className="num-tabular">
+                                {ex.delta > 0 ? `+${ex.delta}` : ex.delta}
+                              </strong>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setCharExceptionDelta(ex.charId, 0)}
+                              aria-label="この個別指定を削除"
+                            >
+                              <IconClose size={11} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
       />
+
+      <dialog
+        ref={ruleDialogRef}
+        className="lab-dialog"
+        closedby="any"
+        aria-labelledby="cost-rule-dialog-title"
+      >
+        <div className="dialog-header">
+          <div>
+            <h3 id="cost-rule-dialog-title">コスト補正ルール設定（印・個別キャラ例外）</h3>
+          </div>
+          <form method="dialog">
+            <button type="submit" value="close" className="ctrl-btn is-icon-only" aria-label="閉じる">
+              <IconClose size={14} />
+            </button>
+          </form>
+        </div>
+        <div className="dialog-body">{renderRuleEditorsBody()}</div>
+        <div className="dialog-footer">
+          <form method="dialog">
+            <button type="submit" value="close" className="ui-btn is-primary" autoFocus>
+              完了
+            </button>
+          </form>
+        </div>
+      </dialog>
     </section>
   );
 }

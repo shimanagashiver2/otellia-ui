@@ -26,8 +26,7 @@ export default function MatrixLabSection({
     <section className="lab-section" id="matrix">
       <div className="lab-section-head">
         <div>
-          <span className="lab-kicker">SECTION 03 // 4×4 SUB PIECE MATRIX</span>
-          <h2 className="lab-section-title">左上空き 4×4 ブロック &amp; 属性×レアリティ配色</h2>
+          <h2 className="lab-section-title">3. 左上空き 4×4 ブロック・属性×レアリティ配色</h2>
           <p className="lab-section-desc">
             4×4マトリクスの左上（リーダー分）を空白にし、残り15マスを「塗り＝属性（神/魔/竜）」「枠線＝レアリティ（S/A/B/C）」で表示する視認性テストです。
           </p>

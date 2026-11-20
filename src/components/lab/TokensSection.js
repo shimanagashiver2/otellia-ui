@@ -4,25 +4,8 @@ import { useState } from 'react';
 import { BG_PATTERN_OPTIONS } from '@/design-versions/defaults';
 import { resolveBgPattern } from '@/design-versions/cssExport';
 import { MONO_FONT_OPTIONS, UI_FONT_OPTIONS } from '@/design-versions/fonts';
+import { toPickerHex } from '@/lib/colorUtils';
 import PreviewSplitWrapper from './PreviewSplitWrapper';
-
-function toPickerHex(value, fallback = '#ffffff') {
-  if (typeof value !== 'string') return fallback;
-  const trimmed = value.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(trimmed)) return trimmed.toLowerCase();
-  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
-    const [, r, g, b] = trimmed;
-    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
-  }
-  const match = trimmed.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-  if (match) {
-    const [r, g, b] = [match[1], match[2], match[3]].map((n) =>
-      Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, '0')
-    );
-    return `#${r}${g}${b}`;
-  }
-  return fallback;
-}
 
 const COLOR_FIELDS = [
   { key: 'bg', label: '全体背景 (bg)' },
@@ -58,10 +41,9 @@ export default function TokensSection({
     <section className="lab-section" id="tokens">
       <div className="lab-section-head">
         <div>
-          <span className="lab-kicker">SECTION 01 // FOUNDATION TOKENS &amp; FONTS</span>
-          <h2 className="lab-section-title">背景9種・角丸統一・フォント比較ラボ</h2>
+          <h2 className="lab-section-title">1. 背景パターン・角丸統一・フォント比較</h2>
           <p className="lab-section-desc">
-            無地・方眼・ドットに加え精密グリッドやクロスヘア・ノイズ等の背景9種を比較でき、日本語8種＋等幅中心16種のフォントおよび小文字専用のotelliaフォントを確認できます。
+            無地・精密設計方眼をベースに新7パターンを加えた全9種の背景、角丸・ボーダー設定、日本語8種＋等幅・数字16種・小文字専用otelliaフォントを確認できます。
           </p>
         </div>
       </div>
@@ -199,7 +181,6 @@ export default function TokensSection({
                   <div className="specimen-typo-card">
                     <div className="font-compare-head">
                       <div>
-                        <span className="typo-meta">BACKGROUND PATTERNS (9 TYPES)</span>
                         <h4 className="typo-h4">背景パターン比較（クリックで画面全体に適用）</h4>
                       </div>
                     </div>
@@ -238,7 +219,6 @@ export default function TokensSection({
                   <div className="specimen-typo-card">
                     <div className="font-compare-head">
                       <div>
-                        <span className="typo-meta">FONT COMPARISON MATRIX</span>
                         <h4 className="typo-h4">フォント一覧比較（クリックで即適用）</h4>
                       </div>
                       <div className="ctrl-segmented">

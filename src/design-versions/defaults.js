@@ -69,41 +69,50 @@ export const DEFAULT_CARD_MIXER = {
 };
 
 export const DEFAULT_COST_OVERLAY = {
-  placement: 'top-tag-bottom-num', // 'top-tag-bottom-num' | 'bottom-right-badge' | 'top-right-delta' | 'bottom-bar'
+  placement: 'top-tag-bottom-num',
   light: {
-    downBg: '#18181b',
-    downText: '#fde047',
-    downBorder: '#eab308',
-    upBg: '#7f1d1d',
-    upText: '#fecaca',
-    upBorder: '#ef4444',
-    normalBg: '#ffffff',
-    normalText: '#0f172a',
-    normalBorder: '#94a3b8',
+    downBg: '#bdb600',
+    downText: '#ffffff',
+    downBorder: '#00000000',
+    upBg: '#423fee',
+    upText: '#ffffff',
+    upBorder: '#00000000',
+    normalBg: '#00000088',
+    normalText: '#ffffff',
+    normalBorder: '#00000000',
   },
   dark: {
-    downBg: '#090d16',
-    downText: '#fde047',
-    downBorder: '#facc15',
-    upBg: '#450a0a',
-    upText: '#fca5a5',
-    upBorder: '#f87171',
-    normalBg: '#161a22',
-    normalText: '#f1f5f9',
-    normalBorder: '#475569',
+    downBg: '#a19b00',
+    downText: '#ffffff',
+    downBorder: '#00000000',
+    upBg: '#3b48f5',
+    upText: '#ffffff',
+    upBorder: '#00000000',
+    normalBg: '#00000088',
+    normalText: '#ffffff',
+    normalBorder: '#00000000',
   },
+};
+
+export const DEFAULT_SLOT_OVERLAY = {
+  labelSize: 9.5,
+  valueSize: 15,
+  plusValueSize: 11.5,
+  tagSize: 9.5,
+  strokeWidth: 2.5,
+  lineGap: 0,
 };
 
 export const BG_PATTERN_OPTIONS = [
   { id: 'none', label: '無地', desc: '純色背景のみ' },
-  { id: 'grid', label: '標準方眼', desc: '24px等間隔ライン' },
   { id: 'fine-grid', label: '精密設計方眼', desc: '96px大枠＋16px細線' },
-  { id: 'dots', label: '微細ドット', desc: '20px点群パターン' },
-  { id: 'cross', label: 'クロスヘア', desc: '測量・研究所十字印' },
-  { id: 'diagonal', label: '斜線ハッチ', desc: '45°極薄製図斜線' },
-  { id: 'isometric', label: 'ダイヤ格子', desc: '盤面・紋章風斜交格子' },
-  { id: 'noise', label: 'マット粒子', desc: '極微細紙面ノイズ' },
-  { id: 'vignette', label: 'ビネット', desc: '中央明・外周締まり' },
+  { id: 'board-stars', label: '盤面星点', desc: '64px対局盤格子＋星点' },
+  { id: 'hex-mesh', label: '六角ハニカム', desc: '正六角形構造メッシュ' },
+  { id: 'micro-ticks', label: '目盛りルーラー', desc: '交点測距ティックのみ' },
+  { id: 'blueprint-frame', label: 'コーナーブラケット', desc: '80pxピッチL字印' },
+  { id: 'woven-twill', label: '極細綾織', desc: '8pxピッチ微細カーボン' },
+  { id: 'vertical-ledger', label: '縦カラム台帳', desc: '120px主線＋30px縦軸' },
+  { id: 'concentric-radar', label: '幾何学アーク', desc: '96px同心円弧コンパス' },
 ];
 
 export const DEFAULT_GROUP_GRADIENTS = {
@@ -129,5 +138,7 @@ export function createDefaultExtensions() {
     fonts: { ...DEFAULT_FONTS },
     cardMixer: { ...DEFAULT_CARD_MIXER },
     costOverlay: structuredClone(DEFAULT_COST_OVERLAY),
+    slotOverlay: { ...DEFAULT_SLOT_OVERLAY },
+    uiFinish: 'precision',
   };
 }

@@ -8,7 +8,8 @@ import {
   getGroupNotesSnapshot,
   subscribeGroupNotes,
 } from '@/design-versions/labStore';
-import { useDialogLightDismiss } from './ComponentsSection';
+import { useDialogLightDismiss } from '@/lib/useDialogLightDismiss';
+import { IconClose } from './UiIcons';
 
 export default function ExportDialog({
   dialogRef,
@@ -66,17 +67,16 @@ export default function ExportDialog({
     >
       <div className="dialog-header">
         <div>
-          <span className="lab-kicker">EXPORT / IMPORT</span>
           <h3 id="export-dialog-title">{activeVersion.name} のトークン書き出し</h3>
         </div>
         <form method="dialog">
-          <button type="submit" value="close" className="ctrl-btn" aria-label="閉じる">
-            ✕
+          <button type="submit" value="close" className="ctrl-btn is-icon-only" aria-label="閉じる">
+            <IconClose size={14} />
           </button>
         </form>
       </div>
 
-      <div className="dialog-tabs">
+      <div className="dialog-tabs comp-tabs is-underline">
         <button
           type="button"
           className={`comp-tab-btn ${tab === 'css' ? 'is-active' : ''}`}

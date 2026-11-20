@@ -13,7 +13,7 @@ const v1LabSlate = {
     badgeRadius: 6,
     borderWidth: 1,
     blur: 0,
-    bgPattern: 'grid',
+    bgPattern: 'fine-grid',
   },
   themes: {
     light: {

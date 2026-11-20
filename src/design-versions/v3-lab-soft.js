@@ -13,7 +13,7 @@ const v3LabSoft = {
     badgeRadius: 8,
     borderWidth: 1,
     blur: 6,
-    bgPattern: 'dots',
+    bgPattern: 'concentric-radar',
   },
   themes: {
     light: {

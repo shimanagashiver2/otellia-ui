@@ -13,7 +13,7 @@ const v2LabPrecision = {
     badgeRadius: 4,
     borderWidth: 1,
     blur: 0,
-    bgPattern: 'grid',
+    bgPattern: 'fine-grid',
   },
   themes: {
     light: {

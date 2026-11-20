@@ -37,10 +37,9 @@ export default function NestedCardLabSection({
     <section className="lab-section" id="nested">
       <div className="lab-section-head">
         <div>
-          <span className="lab-kicker">SECTION 02 // CARD ARCHITECTURE &amp; MIXER</span>
-          <h2 className="lab-section-title">入れ子脱却 6パターン比較 &amp; パーツ別ミキサー</h2>
+          <h2 className="lab-section-title">2. デッキカード構成 6パターン比較・パーツ調整</h2>
           <p className="lab-section-desc">
-            重複ピル・不要なSLOTS表示・無駄空白を撤廃し、40文字コメントを375pxでも省略なしで表示。パーツ別ミキサーで要素を混ぜて縦幅実測を比較できます。
+            重複ピルや不要表示を整理し、375px幅でも40文字コメントを省略せず表示します。各要素を組み合わせてカード縦幅の実測を比較できます。
           </p>
         </div>
         <div className="section-head-actions">
@@ -126,7 +125,7 @@ export default function NestedCardLabSection({
           </div>
         </div>
 
-        <label className="checkbox-inline">
+        <label className="comp-check">
           <input
             type="checkbox"
             checked={cardMixer.showMetaLine !== false}

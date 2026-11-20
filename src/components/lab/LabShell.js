@@ -160,7 +160,12 @@ export default function LabShell() {
     labState.activeSection === 'all' || labState.activeSection === id;
 
   return (
-    <div className="lab-root" id="top" style={rootStyleVars}>
+    <div
+      className="lab-root"
+      id="top"
+      style={rootStyleVars}
+      data-ui-finish={activeVersion.uiFinish || 'precision'}
+    >
       <LabHeader
         isDark={effectiveDark}
         onToggleDark={handleToggleHeaderDark}
@@ -368,6 +373,12 @@ export default function LabShell() {
                 costOverlay: { ...v.costOverlay, placement },
               }))
             }
+            onUpdateSlotOverlay={(key, val) =>
+              mutateActiveVersion((v) => ({
+                ...v,
+                slotOverlay: { ...v.slotOverlay, [key]: val },
+              }))
+            }
           />
         )}
 
@@ -376,6 +387,9 @@ export default function LabShell() {
             version={activeVersion}
             themeMode={themeMode === 'split' ? 'split' : effectiveMode}
             viewportWidth={labState.viewportWidth}
+            onChangeUiFinish={(uiFinish) =>
+              mutateActiveVersion((v) => ({ ...v, uiFinish }))
+            }
           />
         )}
       </main>
